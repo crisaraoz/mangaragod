@@ -48,23 +48,23 @@ export default function FavoritesPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Compact Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center space-x-3">
-          <FiHeart className="w-8 h-8 text-purple-400" />
-          <h1 className="text-3xl font-bold text-white">Favoritos</h1>
-          <span className="bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full text-sm">
+          <FiHeart className="w-6 h-6 sm:w-8 sm:h-8 text-purple-400" />
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">Favoritos</h1>
+          <span className="bg-purple-500/20 text-purple-300 px-2 py-1 rounded-full text-sm">
             {favorites.length}
           </span>
         </div>
 
         {/* Sort Options */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4 w-full sm:w-auto">
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-            className="bg-slate-800 text-white px-4 py-2 rounded-lg border border-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="bg-slate-800 text-white px-3 py-2 rounded-lg border border-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm flex-1 sm:flex-none"
           >
             <option value="added">Fecha agregado</option>
             <option value="title">Título</option>
@@ -73,7 +73,7 @@ export default function FavoritesPage() {
 
           <button
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="bg-slate-800 text-white px-4 py-2 rounded-lg border border-slate-600 hover:bg-slate-700 transition-colors"
+            className="bg-slate-800 text-white px-3 py-2 rounded-lg border border-slate-600 hover:bg-slate-700 transition-colors text-sm"
           >
             {sortOrder === 'asc' ? '↑' : '↓'}
           </button>
@@ -82,74 +82,80 @@ export default function FavoritesPage() {
 
       {/* Content */}
       {favorites.length === 0 ? (
-        <div className="text-center py-12">
-          <FiHeart className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-white mb-2">
+        <div className="text-center py-8 sm:py-12">
+          <FiHeart className="w-12 h-12 sm:w-16 sm:h-16 text-slate-600 mx-auto mb-4" />
+          <h2 className="text-lg sm:text-xl font-semibold text-white mb-2">
             No tienes mangas favoritos
           </h2>
-          <p className="text-slate-400">
+          <p className="text-slate-400 text-sm sm:text-base">
             Comienza explorando y agregando mangas a tus favoritos
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
           {sortedFavorites.map((favorite) => (
-            <div key={favorite.id} className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 overflow-hidden">
+            <div key={favorite.id} className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700/50 overflow-hidden hover:border-purple-500/50 transition-all duration-300 hover:scale-105">
               <div className="relative">
-                <Image
-                  src={favorite.coverUrl}
-                  alt={favorite.title}
-                  width={400}
-                  height={192}
-                  className="w-full h-48 object-cover"
-                />
-                <div className="absolute top-2 right-2 flex space-x-2">
+                <div className="relative aspect-[2/3] bg-slate-700">
+                  <Image
+                    src={favorite.coverUrl}
+                    alt={favorite.title}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                  />
+                </div>
+                <div className="absolute top-2 right-2">
                   <button
                     onClick={() => handleRemove(favorite.id)}
-                    className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full transition-colors"
+                    className="bg-red-500/80 hover:bg-red-500 text-white p-1.5 rounded-full transition-colors backdrop-blur-sm"
                     title="Eliminar de favoritos"
                   >
-                    <FiTrash2 className="w-4 h-4" />
+                    <FiTrash2 className="w-3 h-3" />
                   </button>
                 </div>
               </div>
               
-              <div className="p-4 space-y-3">
-                <h3 className="text-white font-semibold text-lg line-clamp-2">
+              <div className="p-2 sm:p-3 space-y-2">
+                <h3 className="text-white font-medium text-xs sm:text-sm line-clamp-2 min-h-[2.5rem]">
                   {favorite.title}
                 </h3>
                 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-400">Estado:</span>
-                    <select
-                      value={favorite.status}
-                      onChange={(e) => handleStatusChange(favorite.id, e.target.value as FavoriteManga['status'])}
-                      className="bg-slate-700 text-white px-3 py-1 rounded text-sm border border-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                <div className="space-y-1.5">
+                  <select
+                    value={favorite.status}
+                    onChange={(e) => handleStatusChange(favorite.id, e.target.value as FavoriteManga['status'])}
+                    className="w-full bg-slate-700 text-white px-2 py-1 rounded text-xs border border-slate-600 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  >
+                    {statusOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  
+                  <div className="flex items-center justify-between text-xs text-slate-400">
+                    <span className="hidden sm:inline">
+                      {new Date(favorite.addedAt).toLocaleDateString()}
+                    </span>
+                    <span className="sm:hidden">
+                      {new Date(favorite.addedAt).toLocaleDateString('es-ES', { 
+                        day: '2-digit', 
+                        month: '2-digit' 
+                      })}
+                    </span>
+                    <button
+                      onClick={() => window.open(`/manga/${favorite.id}`, '_blank')}
+                      className="text-purple-400 hover:text-purple-300 transition-colors"
+                      title="Ver detalles"
                     >
-                      {statusOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                      <FiEdit3 className="w-3 h-3" />
+                    </button>
                   </div>
-                  
-                  <div className="flex items-center justify-between text-sm text-slate-400">
-                    <span>Agregado:</span>
-                    <span>{new Date(favorite.addedAt).toLocaleDateString()}</span>
-                  </div>
-                  
-                  {favorite.lastReadAt && (
-                    <div className="flex items-center justify-between text-sm text-slate-400">
-                      <span>Última lectura:</span>
-                      <span>{new Date(favorite.lastReadAt).toLocaleDateString()}</span>
-                    </div>
-                  )}
                 </div>
                 
-                <div className="flex justify-between items-center">
-                  <span className={`px-2 py-1 text-xs rounded-full ${
+                <div className="flex justify-center">
+                  <span className={`px-2 py-0.5 text-xs rounded-full ${
                     favorite.status === 'reading' ? 'bg-green-500/20 text-green-300' :
                     favorite.status === 'completed' ? 'bg-blue-500/20 text-blue-300' :
                     favorite.status === 'plan-to-read' ? 'bg-yellow-500/20 text-yellow-300' :
@@ -157,14 +163,6 @@ export default function FavoritesPage() {
                   }`}>
                     {statusOptions.find(s => s.value === favorite.status)?.label}
                   </span>
-                  
-                  <button
-                    onClick={() => window.open(`/manga/${favorite.id}`, '_blank')}
-                    className="text-purple-400 hover:text-purple-300 transition-colors"
-                    title="Ver detalles"
-                  >
-                    <FiEdit3 className="w-4 h-4" />
-                  </button>
                 </div>
               </div>
             </div>
