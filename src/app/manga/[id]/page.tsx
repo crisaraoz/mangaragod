@@ -8,6 +8,37 @@ import { mangaDexService } from '@/services/mangadex';
 import { useMangaStore } from '@/store/mangaStore';
 import type { Manga, Chapter } from '@/types/manga';
 import ImageDebug from '@/components/debug/ImageDebug';
+import ReactCountryFlag from 'react-country-flag';
+
+function getFlagByLanguage(lang: string) {
+  switch (lang) {
+    case 'es': return '🇦🇷'; // Español (Argentina)
+    case 'en': return '🇺🇸'; // Inglés (Estados Unidos)
+    case 'ja': return '🇯🇵'; // Japonés
+    case 'fr': return '🇫🇷'; // Francés
+    case 'it': return '🇮🇹'; // Italiano
+    case 'pt': return '🇧🇷'; // Portugués (Brasil)
+    case 'de': return '🇩🇪'; // Alemán
+    case 'ru': return '🇷🇺'; // Ruso
+    case 'zh': return '🇨🇳'; // Chino
+    default: return '🏳️'; // Otro/no definido
+  }
+}
+
+function getCountryCode(lang: string) {
+  switch (lang) {
+    case 'es': return 'AR'; // Español (Argentina)
+    case 'en': return 'US'; // Inglés (Estados Unidos)
+    case 'ja': return 'JP'; // Japonés
+    case 'fr': return 'FR'; // Francés
+    case 'it': return 'IT'; // Italiano
+    case 'pt': return 'BR'; // Portugués (Brasil)
+    case 'de': return 'DE'; // Alemán
+    case 'ru': return 'RU'; // Ruso
+    case 'zh': return 'CN'; // Chino
+    default: return 'UN'; // Unknown
+  }
+}
 
 export default function MangaDetailPage() {
   const params = useParams();
@@ -19,7 +50,7 @@ export default function MangaDetailPage() {
   const [loading, setLoading] = useState(true);
   const [chaptersLoading, setChaptersLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [selectedLanguage, setSelectedLanguage] = useState('all');
 
   const mangaId = params.id as string;
 
@@ -38,34 +69,29 @@ export default function MangaDetailPage() {
   const loadChapters = useCallback(async () => {
     try {
       setChaptersLoading(true);
-      
-      // Cargar todos los capítulos disponibles
       let allChapters: Chapter[] = [];
       let offset = 0;
       let hasMore = true;
-      
+      const languageFilter = selectedLanguage === 'all' ? undefined : [selectedLanguage];
       while (hasMore) {
-        const chaptersData = await mangaDexService.getAllMangaFeedChapters(mangaId, { language: [selectedLanguage] });
+        const chaptersData = await mangaDexService.getAllMangaFeedChapters(
+          mangaId,
+          languageFilter ? { language: languageFilter } : {}
+        );
         allChapters = [...allChapters, ...chaptersData.data];
-        
-        // Si recibimos menos capítulos que el límite, no hay más
-        hasMore = chaptersData.data.length === 100; // El límite por defecto es 100 en el método
+        hasMore = chaptersData.data.length === 100;
         offset += 100;
-        
-        // Límite de seguridad para evitar bucles infinitos
         if (offset > 5000) break;
       }
-      
-      // Ordenar capítulos por número de capítulo
       const sortedChapters = allChapters
-        .filter(chapter => chapter.attributes.chapter) // Solo capítulos con número
+        .filter(chapter => chapter.attributes.chapter)
         .sort((a, b) => {
           const chapterA = parseFloat(a.attributes.chapter || '0');
           const chapterB = parseFloat(b.attributes.chapter || '0');
           return chapterA - chapterB;
         });
-      
       setChapters(sortedChapters);
+      console.log('Capítulos obtenidos:', sortedChapters);
     } catch (error) {
       console.error('Error loading chapters:', error);
     } finally {
@@ -257,16 +283,14 @@ export default function MangaDetailPage() {
       <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-white">Capítulos</h2>
-          
-          {/* Language Filter */}
           <select
             value={selectedLanguage}
-            onChange={(e) => setSelectedLanguage(e.target.value)}
-            className="bg-slate-700 text-white px-4 py-2 rounded-lg border border-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            onChange={e => setSelectedLanguage(e.target.value)}
+            className="bg-slate-800 text-white rounded px-2 py-1"
           >
-            <option value="en">Inglés</option>
+            <option value="all">Todos</option>
             <option value="es">Español</option>
-            <option value="ja">Japonés</option>
+            <option value="en">Inglés</option>
           </select>
         </div>
 
@@ -296,8 +320,14 @@ export default function MangaDetailPage() {
                 >
                   <div className="flex-1">
                     <h3 className="text-white font-medium">
+                      <ReactCountryFlag
+                        countryCode={getCountryCode(chapter.attributes.translatedLanguage)}
+                        svg
+                        style={{ width: '1.5em', height: '1.5em', marginRight: '0.5em', verticalAlign: 'middle' }}
+                        title={chapter.attributes.translatedLanguage}
+                      />
                       Capítulo {chapter.attributes.chapter}
-                      {chapter.attributes.title && ` - ${chapter.attributes.title}`}
+                      {chapter.attributes.title && typeof chapter.attributes.title === 'object' ? (chapter.attributes.title.es || chapter.attributes.title.en || chapter.attributes.title[Object.keys(chapter.attributes.title)[0]] ? ` - ${chapter.attributes.title.es || chapter.attributes.title.en || chapter.attributes.title[Object.keys(chapter.attributes.title)[0]]}` : '') : ''}
                     </h3>
                     <p className="text-slate-400 text-sm">
                       {new Date(chapter.attributes.publishAt).toLocaleDateString()}

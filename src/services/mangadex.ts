@@ -301,8 +301,6 @@ class MangaDexService {
           offset,
         });
         allChapters.push(...response.data);
-        
-        // Verificar si hay más capítulos
         hasMore = response.data.length === limit;
         offset += limit;
       }
