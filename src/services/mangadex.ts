@@ -92,6 +92,68 @@ class MangaDexService {
     }
   }
 
+  // Obtener feed de capítulos de un manga (usando el endpoint /feed)
+  async getMangaFeed(
+    mangaId: string,
+    options: {
+      language?: string[];
+      limit?: number;
+      offset?: number;
+      includeEmptyPages?: 0 | 1;
+      includeFuturePublishAt?: 0 | 1;
+      includeExternalUrl?: 0 | 1;
+      order?: Record<string, 'asc' | 'desc'>;
+      includes?: string[];
+    } = {}
+  ): Promise<ChapterResponse> {
+    try {
+      const {
+        language = ['en'],
+        limit = 100,
+        offset = 0,
+        includeEmptyPages,
+        includeFuturePublishAt,
+        includeExternalUrl,
+        order = { chapter: 'asc' },
+        includes = ['scanlation_group']
+      } = options;
+
+      const params: {
+        translatedLanguage: string[];
+        limit: number;
+        offset: number;
+        includes: string[];
+        order: Record<string, 'asc' | 'desc'>;
+        includeEmptyPages?: 0 | 1;
+        includeFuturePublishAt?: 0 | 1;
+        includeExternalUrl?: 0 | 1;
+      } = {
+        translatedLanguage: language,
+        limit,
+        offset,
+        includes,
+        order,
+      };
+
+      // Agregar parámetros opcionales solo si están definidos
+      if (includeEmptyPages !== undefined) {
+        params.includeEmptyPages = includeEmptyPages;
+      }
+      if (includeFuturePublishAt !== undefined) {
+        params.includeFuturePublishAt = includeFuturePublishAt;
+      }
+      if (includeExternalUrl !== undefined) {
+        params.includeExternalUrl = includeExternalUrl;
+      }
+
+      const response = await this.api.get(`/manga/${mangaId}/feed`, { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error getting manga feed:', error);
+      throw error;
+    }
+  }
+
   // Obtener servidor de páginas para un capítulo
   async getChapterPages(chapterId: string): Promise<AtHomeResponse> {
     try {
@@ -105,7 +167,7 @@ class MangaDexService {
 
   // Obtener URL de la imagen de portada (a través de nuestro proxy)
   getCoverUrl(mangaId: string, fileName: string, size: 'small' | 'medium' | 'large' = 'medium'): string {
-    // Usar nuestra ruta proxy en lugar de la URL directa de MangaDx
+    // Usar nuestra ruta proxy en lugar de la URL directa de MangaDex
     // Esto evita el problema de hotlink en producción
     return `/api/covers/${mangaId}/${fileName}?size=${size}`;
   }
@@ -212,6 +274,58 @@ class MangaDexService {
       };
     } catch (error) {
       console.error('Error getting all chapters:', error);
+      throw error;
+    }
+  }
+
+  // Obtener TODOS los capítulos de un manga usando el endpoint /feed (maneja paginación automáticamente)
+  async getAllMangaFeedChapters(
+    mangaId: string,
+    options: {
+      language?: string[];
+      includeEmptyPages?: 0 | 1;
+      includeFuturePublishAt?: 0 | 1;
+      includeExternalUrl?: 0 | 1;
+    } = {}
+  ): Promise<ChapterResponse> {
+    try {
+      const allChapters: ChapterResponse['data'] = [];
+      let offset = 0;
+      const limit = 100;
+      let hasMore = true;
+
+      while (hasMore) {
+        const response = await this.getMangaFeed(mangaId, {
+          ...options,
+          limit,
+          offset,
+        });
+        allChapters.push(...response.data);
+        hasMore = response.data.length === limit;
+        offset += limit;
+      }
+
+      return {
+        data: allChapters,
+        limit: allChapters.length,
+        offset: 0,
+        total: allChapters.length,
+        result: 'ok',
+        response: 'collection'
+      };
+    } catch (error) {
+      console.error('Error getting all manga feed chapters:', error);
+      throw error;
+    }
+  }
+
+  // Obtener metadatos de un capítulo por su ID
+  async getChapterById(chapterId: string) {
+    try {
+      const response = await this.api.get(`/chapter/${chapterId}`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error getting chapter by id:', error);
       throw error;
     }
   }
