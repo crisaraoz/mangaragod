@@ -42,16 +42,15 @@ export default function MangaDetailPage() {
       // Cargar todos los capítulos disponibles
       let allChapters: Chapter[] = [];
       let offset = 0;
-      const limit = 500; // Cargar en lotes de 500
       let hasMore = true;
       
       while (hasMore) {
-        const chaptersData = await mangaDexService.getChapters(mangaId, [selectedLanguage], limit, offset);
+        const chaptersData = await mangaDexService.getAllMangaFeedChapters(mangaId, { language: [selectedLanguage] });
         allChapters = [...allChapters, ...chaptersData.data];
         
         // Si recibimos menos capítulos que el límite, no hay más
-        hasMore = chaptersData.data.length === limit;
-        offset += limit;
+        hasMore = chaptersData.data.length === 100; // El límite por defecto es 100 en el método
+        offset += 100;
         
         // Límite de seguridad para evitar bucles infinitos
         if (offset > 5000) break;

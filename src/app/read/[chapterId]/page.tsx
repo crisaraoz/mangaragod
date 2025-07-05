@@ -3,10 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { FiArrowLeft, FiArrowRight, FiSettings, FiChevronLeft, FiChevronRight, FiAlertCircle } from 'react-icons/fi';
+import { FiArrowLeft, FiArrowRight, FiChevronLeft, FiChevronRight, FiAlertCircle, FiMaximize2 } from 'react-icons/fi';
 import { mangaDexService } from '@/services/mangadex';
 import { useMangaStore } from '@/store/mangaStore';
-import type { AtHomeResponse } from '@/types/manga';
+import type { AtHomeResponse, Chapter } from '@/types/manga';
 
 export default function ChapterReaderPage() {
   const params = useParams();
@@ -19,10 +19,12 @@ export default function ChapterReaderPage() {
   const [error, setError] = useState<string | null>(null);
   const [imageLoadingStates, setImageLoadingStates] = useState<Record<number, boolean>>({});
   const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
-  const [showSettings, setShowSettings] = useState(false);
-  const [fitToWidth, setFitToWidth] = useState(true);
+  const [chapterInfo, setChapterInfo] = useState<Chapter | null>(null);
+  const [allChapters, setAllChapters] = useState<Chapter[]>([]);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
+  const readerRef = useRef<HTMLDivElement>(null);
 
   const chapterId = params.chapterId as string;
 
@@ -134,6 +136,50 @@ export default function ChapterReaderPage() {
     }));
   };
 
+  // Cargar metadatos del capítulo y todos los capítulos del manga
+  useEffect(() => {
+    async function fetchChapterInfoAndList() {
+      try {
+        const info: Chapter = await mangaDexService.getChapterById(chapterId);
+        setChapterInfo(info);
+        // Obtener todos los capítulos del manga
+        if (info && info.relationships) {
+          const mangaRel = info.relationships.find((rel) => (rel as { id: string; type: string }).type === 'manga') as { id: string; type: string } | undefined;
+          if (mangaRel) {
+            const chaptersResp = await mangaDexService.getAllMangaFeedChapters(mangaRel.id, { language: [info.attributes.translatedLanguage] });
+            setAllChapters(chaptersResp.data);
+          }
+        }
+      } catch {
+        // Ignorar error
+      }
+    }
+    fetchChapterInfoAndList();
+  }, [chapterId]);
+
+  // Pantalla completa
+  const handleFullscreen = () => {
+    if (!isFullscreen && readerRef.current) {
+      if (readerRef.current.requestFullscreen) {
+        readerRef.current.requestFullscreen();
+      } else if ((readerRef.current as any).webkitRequestFullscreen) {
+        (readerRef.current as any).webkitRequestFullscreen();
+      }
+      setIsFullscreen(true);
+    } else if (document.fullscreenElement) {
+      document.exitFullscreen();
+      setIsFullscreen(false);
+    }
+  };
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+  }, []);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
@@ -198,178 +244,130 @@ export default function ChapterReaderPage() {
   console.log('Current page URL:', currentPageUrl); // Debug
 
   return (
-    <div className="min-h-screen bg-black">
-      {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-sm">
-        <div className="flex items-center justify-between p-4">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => router.back()}
-              className="flex items-center space-x-2 text-white hover:text-purple-400 transition-colors"
-            >
-              <FiArrowLeft className="w-5 h-5" />
-              <span>Volver</span>
-            </button>
-            
-            <div className="text-white">
-              <span className="text-lg font-semibold">
-                Página {currentPage + 1} de {totalPages}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              className="text-white hover:text-purple-400 transition-colors"
-            >
-              <FiSettings className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Settings Panel */}
-        {showSettings && (
-          <div className="bg-slate-800 border-t border-slate-700 p-4">
-            <div className="flex items-center space-x-4">
-              <label className="flex items-center space-x-2 text-white">
-                <input
-                  type="checkbox"
-                  checked={fitToWidth}
-                  onChange={(e) => setFitToWidth(e.target.checked)}
-                  className="form-checkbox h-4 w-4 text-purple-500"
-                />
-                <span>Ajustar al ancho</span>
-              </label>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Main Content */}
+    <div ref={readerRef} className={isFullscreen ? 'fixed inset-0 z-50 bg-black' : ''}>
+      {/* Barra superior con info de capítulo y controles */}
       <div
-        ref={containerRef}
-        className="pt-16 pb-20 overflow-auto h-screen"
-        style={{ paddingTop: showSettings ? '8rem' : '4rem' }}
+        className="flex items-center justify-between px-4 py-2 bg-black/80 sticky top-0 z-20 gap-2"
+        style={{ minHeight: '48px' }}
       >
-        <div className="flex justify-center">
-          <div className="relative max-w-4xl">
-            {/* Current Page Image */}
-            <div className="relative">
-              {/* Loading State */}
-              {imageLoadingStates[currentPage] && (
-                <div className="flex items-center justify-center bg-slate-800 rounded-lg min-h-[600px]">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-500 mx-auto mb-4"></div>
-                    <p className="text-white">Cargando página {currentPage + 1}...</p>
-                  </div>
-                </div>
-              )}
-              
-              {/* Error State */}
-              {imageErrors[currentPage] && (
-                <div className="flex items-center justify-center bg-slate-800 rounded-lg min-h-[600px]">
-                  <div className="text-center">
-                    <FiAlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-                    <p className="text-white mb-4">Error al cargar la página {currentPage + 1}</p>
-                    <button
-                      onClick={retryCurrentPage}
-                      className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors"
-                    >
-                      Reintentar
-                    </button>
-                  </div>
-                </div>
-              )}
-              
-              {/* Image */}
-              {!imageErrors[currentPage] && (
-                <Image
-                  src={currentPageUrl}
-                  alt={`Página ${currentPage + 1}`}
-                  width={800}
-                  height={1200}
-                  className={`${
-                    fitToWidth ? 'w-full h-auto' : 'max-w-full h-auto'
-                  } rounded-lg shadow-2xl ${imageLoadingStates[currentPage] ? 'opacity-0' : 'opacity-100'}`}
-                  onLoad={() => handleImageLoad(currentPage)}
-                  onError={() => handleImageError(currentPage)}
-                  priority
-                  unoptimized // Importante para imágenes externas
-                />
-              )}
-            </div>
-
-            {/* Navigation Arrows */}
-            <div className="absolute inset-y-0 left-0 flex items-center">
-              {currentPage > 0 && (
-                <button
-                  onClick={previousPage}
-                  className="ml-4 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full transition-colors"
-                >
-                  <FiChevronLeft className="w-6 h-6" />
-                </button>
-              )}
-            </div>
-
-            <div className="absolute inset-y-0 right-0 flex items-center">
-              {currentPage < totalPages - 1 && (
-                <button
-                  onClick={nextPage}
-                  className="mr-4 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full transition-colors"
-                >
-                  <FiChevronRight className="w-6 h-6" />
-                </button>
-              )}
-            </div>
-          </div>
+        <button onClick={() => router.back()} className="text-white flex items-center space-x-2 min-w-[70px]">
+          <FiArrowLeft className="w-5 h-5" />
+          <span className="hidden sm:inline">Volver</span>
+        </button>
+        <div className="flex-1 text-center truncate px-2">
+          {chapterInfo && (
+            <span className="text-white font-bold truncate block max-w-full">
+              Capítulo {chapterInfo.attributes.chapter || ''} {chapterInfo.attributes.title ? `- ${chapterInfo.attributes.title}` : ''}
+            </span>
+          )}
         </div>
-      </div>
-
-      {/* Footer Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm">
-        <div className="flex items-center justify-between p-4">
-          <button
-            onClick={previousPage}
-            disabled={currentPage === 0}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-              currentPage === 0
-                ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                : 'bg-purple-500 hover:bg-purple-600 text-white'
-            }`}
-          >
-            <FiArrowLeft className="w-4 h-4" />
-            <span>Anterior</span>
-          </button>
-
-          {/* Page Navigator */}
-          <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 min-w-[120px] justify-end">
+          {/* Selector de capítulos */}
+          {allChapters.length > 0 && (
             <select
-              value={currentPage}
-              onChange={(e) => goToPage(parseInt(e.target.value))}
-              className="bg-slate-700 text-white px-3 py-1 rounded border border-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="bg-slate-800 text-white rounded px-2 py-1 max-w-[160px] w-full sm:w-auto text-xs sm:text-base"
+              value={chapterId}
+              onChange={e => router.push(`/read/${e.target.value}`)}
+              style={{ minWidth: '90px' }}
             >
-              {Array.from({ length: totalPages }, (_, index) => (
-                <option key={index} value={index}>
-                  Página {index + 1}
+              {allChapters.map(chap => (
+                <option key={chap.id} value={chap.id}>
+                  Cap. {chap.attributes.chapter || '?'} {chap.attributes.title ? `- ${chap.attributes.title}` : ''}
                 </option>
               ))}
             </select>
-          </div>
-
+          )}
+          {/* Botón pantalla completa: visible solo en desktop, flotante en móvil */}
           <button
-            onClick={nextPage}
-            disabled={currentPage === totalPages - 1}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-              currentPage === totalPages - 1
-                ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                : 'bg-purple-500 hover:bg-purple-600 text-white'
-            }`}
+            onClick={handleFullscreen}
+            className="text-white ml-2 hidden sm:inline-flex"
+            title="Pantalla completa"
           >
-            <span>Siguiente</span>
-            <FiArrowRight className="w-4 h-4" />
+            <FiMaximize2 className="w-5 h-5" />
           </button>
         </div>
+      </div>
+      {/* Botón pantalla completa flotante en móvil */}
+      <button
+        onClick={handleFullscreen}
+        className="sm:hidden fixed bottom-20 right-4 z-50 bg-purple-600 hover:bg-purple-700 text-white rounded-full p-4 shadow-lg transition-all"
+        title="Pantalla completa"
+        style={{ boxShadow: '0 4px 24px 0 rgba(80,0,120,0.25)' }}
+      >
+        <FiMaximize2 className="w-7 h-7" />
+      </button>
+      {/* Contenedor de imagen con padding lateral en móvil */}
+      <div
+        ref={containerRef}
+        className="pt-4 pb-20 overflow-auto h-screen flex flex-col items-center"
+        style={{ paddingLeft: 'max(8px, env(safe-area-inset-left))', paddingRight: 'max(8px, env(safe-area-inset-right))' }}
+      >
+        <div className="flex justify-center w-full">
+          {chapterData && (
+            <Image
+              src={currentPageUrl}
+              alt={`Página ${currentPage + 1}`}
+              width={800}
+              height={1200}
+              className={`w-full h-auto rounded-lg shadow-2xl max-w-[100vw] sm:max-w-[600px] md:max-w-[800px] ${imageLoadingStates[currentPage] ? 'opacity-0' : 'opacity-100'}`}
+              onLoad={() => handleImageLoad(currentPage)}
+              onError={() => handleImageError(currentPage)}
+              priority
+            />
+          )}
+        </div>
+        {/* Navigation Arrows */}
+        <div className="absolute inset-y-0 left-0 flex items-center">
+          {currentPage > 0 && (
+            <button
+              onClick={previousPage}
+              className="ml-4 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full transition-colors"
+            >
+              <FiChevronLeft className="w-6 h-6" />
+            </button>
+          )}
+        </div>
+
+        <div className="absolute inset-y-0 right-0 flex items-center">
+          {currentPage < totalPages - 1 && (
+            <button
+              onClick={nextPage}
+              className="mr-4 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full transition-colors"
+            >
+              <FiChevronRight className="w-6 h-6" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Controles de navegación de página */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-black/90 flex items-center justify-center gap-2 px-2 py-2 sm:py-4">
+        <button
+          onClick={previousPage}
+          disabled={currentPage === 0}
+          className="flex items-center justify-center bg-purple-700 hover:bg-purple-800 text-white font-semibold rounded-lg sm:rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed px-3 py-2 sm:px-6 sm:py-3 text-xs sm:text-base min-w-[70px] sm:min-w-[110px]"
+        >
+          <span className="truncate">Anterior</span>
+        </button>
+        <select
+          value={currentPage}
+          onChange={e => goToPage(Number(e.target.value))}
+          className="mx-2 bg-slate-800 text-white rounded px-2 py-1 text-xs sm:text-base"
+          style={{ minWidth: '80px' }}
+        >
+          {Array.from({ length: totalPages }).map((_, idx) => (
+            <option key={idx} value={idx}>
+              Página {idx + 1}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={nextPage}
+          disabled={currentPage === totalPages - 1}
+          className="flex items-center justify-center bg-purple-700 hover:bg-purple-800 text-white font-semibold rounded-lg sm:rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed px-3 py-2 sm:px-6 sm:py-3 text-xs sm:text-base min-w-[70px] sm:min-w-[110px]"
+        >
+          <span className="truncate">Siguiente</span>
+        </button>
       </div>
       
       {/* Debug Component - Solo en desarrollo */}

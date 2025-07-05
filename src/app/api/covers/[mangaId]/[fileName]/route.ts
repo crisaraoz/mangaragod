@@ -9,7 +9,7 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     const size = searchParams.get('size') || 'medium';
     
-    // Construir la URL original de MangaDx
+    // Construir la URL original de MangaDex
     const sizeMap = {
       small: '256',
       medium: '512',
@@ -23,7 +23,7 @@ export async function GET(
       imageUrl = `https://uploads.mangadex.org/covers/${mangaId}/${fileName}.${sizeMap[size as keyof typeof sizeMap]}.jpg`;
     }
     
-    // Fetch la imagen desde MangaDx
+    // Fetch la imagen desde MangaDex
     const response = await fetch(imageUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
