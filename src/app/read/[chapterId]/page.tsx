@@ -137,7 +137,7 @@ export default function ChapterReaderPage() {
         if (info && info.relationships) {
           const mangaRel = info.relationships.find((rel) => (rel as { id: string; type: string }).type === 'manga') as { id: string; type: string } | undefined;
           if (mangaRel) {
-            const chaptersResp = await mangaDexService.getAllMangaFeedChapters(mangaRel.id, { language: [info.attributes.translatedLanguage] });
+            const chaptersResp = await mangaDexService.getAllMangaFeedChapters(mangaRel.id);
             setAllChapters(chaptersResp.data);
           }
         }

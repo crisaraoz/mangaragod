@@ -104,47 +104,36 @@ class MangaDexService {
       includeExternalUrl?: 0 | 1;
       order?: Record<string, 'asc' | 'desc'>;
       includes?: string[];
+      contentRating?: string[];
+      includeUnavailable?: 0 | 1;
     } = {}
   ): Promise<ChapterResponse> {
     try {
       const {
-        language = ['en'],
+        language,
         limit = 100,
         offset = 0,
         includeEmptyPages,
         includeFuturePublishAt,
         includeExternalUrl,
-        order = { chapter: 'asc' },
-        includes = ['scanlation_group']
+        order = { volume: 'desc', chapter: 'desc' },
+        includes = ['scanlation_group', 'user'],
+        contentRating,
+        includeUnavailable = 0,
       } = options;
 
-      const params: {
-        translatedLanguage: string[];
-        limit: number;
-        offset: number;
-        includes: string[];
-        order: Record<string, 'asc' | 'desc'>;
-        includeEmptyPages?: 0 | 1;
-        includeFuturePublishAt?: 0 | 1;
-        includeExternalUrl?: 0 | 1;
-      } = {
-        translatedLanguage: language,
+      const params: Record<string, unknown> = {
         limit,
         offset,
         includes,
         order,
+        includeUnavailable,
       };
-
-      // Agregar parámetros opcionales solo si están definidos
-      if (includeEmptyPages !== undefined) {
-        params.includeEmptyPages = includeEmptyPages;
-      }
-      if (includeFuturePublishAt !== undefined) {
-        params.includeFuturePublishAt = includeFuturePublishAt;
-      }
-      if (includeExternalUrl !== undefined) {
-        params.includeExternalUrl = includeExternalUrl;
-      }
+      if (contentRating !== undefined) params.contentRating = contentRating;
+      if (language) params.translatedLanguage = language;
+      if (includeEmptyPages !== undefined) params.includeEmptyPages = includeEmptyPages;
+      if (includeFuturePublishAt !== undefined) params.includeFuturePublishAt = includeFuturePublishAt;
+      if (includeExternalUrl !== undefined) params.includeExternalUrl = includeExternalUrl;
 
       const response = await this.api.get(`/manga/${mangaId}/feed`, { params });
       return response.data;
@@ -282,16 +271,26 @@ class MangaDexService {
   async getAllMangaFeedChapters(
     mangaId: string,
     options: {
-      language?: string[];
+      // language?: string[];
+      limit?: number;
+      offset?: number;
       includeEmptyPages?: 0 | 1;
       includeFuturePublishAt?: 0 | 1;
       includeExternalUrl?: 0 | 1;
+      order?: Record<string, 'asc' | 'desc'>;
+      includes?: string[];
+      contentRating?: string[];
+      includeUnavailable?: 0 | 1;
     } = {}
   ): Promise<ChapterResponse> {
     try {
       const allChapters: ChapterResponse['data'] = [];
       let offset = 0;
-      const limit = 100;
+      let limit = 100;
+      if (options && Object.prototype.hasOwnProperty.call(options, 'limit')) {
+        const opt = options as { limit?: number };
+        if (typeof opt.limit === 'number') limit = opt.limit;
+      }
       let hasMore = true;
 
       while (hasMore) {
