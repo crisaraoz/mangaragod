@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { FiBook, FiStar, FiHeart, FiPlay, FiArrowLeft, FiCalendar, FiUser, FiTag } from 'react-icons/fi';
@@ -9,6 +9,7 @@ import { useMangaStore } from '@/store/mangaStore';
 import type { Manga, Chapter } from '@/types/manga';
 import ImageDebug from '@/components/debug/ImageDebug';
 import ReactCountryFlag from 'react-country-flag';
+import React from 'react';
 
 function getCountryCode(lang: string) {
   switch (lang) {
@@ -35,7 +36,11 @@ export default function MangaDetailPage() {
   const [loading, setLoading] = useState(true);
   const [chaptersLoading, setChaptersLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState('all');
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['en']);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 50;
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
 
   const mangaId = params.id as string;
 
@@ -57,32 +62,31 @@ export default function MangaDetailPage() {
       let allChapters: Chapter[] = [];
       let offset = 0;
       let hasMore = true;
-      const languageFilter = selectedLanguage === 'all' ? undefined : [selectedLanguage];
+      const limit = 96;
       while (hasMore) {
         const chaptersData = await mangaDexService.getAllMangaFeedChapters(
           mangaId,
-          languageFilter ? { language: languageFilter } : {}
+          {
+            limit,
+            offset,
+            order: { volume: 'desc', chapter: 'desc' },
+            includes: ['scanlation_group', 'user'],
+            includeUnavailable: 0,
+          }
         );
         allChapters = [...allChapters, ...chaptersData.data];
-        hasMore = chaptersData.data.length === 100;
-        offset += 100;
+        hasMore = chaptersData.data.length === limit;
+        offset += limit;
         if (offset > 5000) break;
       }
-      const sortedChapters = allChapters
-        .filter(chapter => chapter.attributes.chapter)
-        .sort((a, b) => {
-          const chapterA = parseFloat(a.attributes.chapter || '0');
-          const chapterB = parseFloat(b.attributes.chapter || '0');
-          return chapterA - chapterB;
-        });
-      setChapters(sortedChapters);
-      console.log('Capítulos obtenidos:', sortedChapters);
+      setChapters(allChapters);
+      console.log('Capítulos obtenidos:', allChapters);
     } catch (error) {
       console.error('Error loading chapters:', error);
     } finally {
       setChaptersLoading(false);
     }
-  }, [mangaId, selectedLanguage]);
+  }, [mangaId]);
 
   useEffect(() => {
     if (mangaId) {
@@ -94,7 +98,67 @@ export default function MangaDetailPage() {
     if (manga) {
       loadChapters();
     }
-  }, [manga, selectedLanguage, loadChapters]);
+  }, [manga, loadChapters]);
+
+  // Obtener todos los idiomas disponibles en los capítulos
+  const availableLanguages = useMemo(() => {
+    const langs = new Set<string>();
+    chapters.forEach(ch => {
+      if (ch.attributes.translatedLanguage) langs.add(ch.attributes.translatedLanguage);
+    });
+    return Array.from(langs).sort();
+  }, [chapters]);
+
+  // Filtrar capítulos según los idiomas seleccionados
+  const filteredChapters = useMemo(() => {
+    return chapters.filter(ch => selectedLanguages.includes(ch.attributes.translatedLanguage));
+  }, [chapters, selectedLanguages]);
+
+  // Calcular capítulos a mostrar en la página actual
+  const paginatedChapters = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredChapters.slice(start, start + pageSize);
+  }, [filteredChapters, currentPage]);
+
+  const totalPages = Math.ceil(filteredChapters.length / pageSize);
+
+  const handleLanguageChange = (lang: string) => {
+    setCurrentPage(1);
+    setSelectedLanguages(prev =>
+      prev.includes(lang) ? prev.filter(l => l !== lang) : [...prev, lang]
+    );
+  };
+
+  // Cerrar el dropdown al hacer click fuera
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Mapeo de idioma a país para bandera
+  const langToCountry: Record<string, string> = {
+    en: 'US', es: 'AR', ja: 'JP', fr: 'FR', it: 'IT', pt: 'BR', de: 'DE', ru: 'RU', zh: 'CN',
+    ca: 'ES', pl: 'PL', th: 'TH', vi: 'VN', hi: 'IN', he: 'IL', 'pt-br': 'BR', ar: 'SA',
+    // Puedes agregar más mapeos según los idiomas que aparezcan
+  };
+
+  // Etiqueta visual para cada idioma
+  const getLangLabel = (lang: string) => (
+    <span className="flex items-center gap-1">
+      <ReactCountryFlag
+        countryCode={langToCountry[lang] || 'UN'}
+        svg
+        style={{ width: '1.2em', height: '1.2em', verticalAlign: 'middle' }}
+        title={lang}
+      />
+      <span className="font-semibold">{lang.toUpperCase()}</span>
+    </span>
+  );
 
   if (loading) {
     return (
@@ -268,15 +332,46 @@ export default function MangaDetailPage() {
       <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-white">Capítulos</h2>
-          <select
-            value={selectedLanguage}
-            onChange={e => setSelectedLanguage(e.target.value)}
-            className="bg-slate-800 text-white rounded px-2 py-1"
-          >
-            <option value="all">Todos</option>
-            <option value="es">Español</option>
-            <option value="en">Inglés</option>
-          </select>
+          {/* Dropdown multiselect de idiomas */}
+          <div className="relative min-w-[180px]" ref={dropdownRef}>
+            <button
+              type="button"
+              className="flex items-center gap-2 px-3 py-1 bg-slate-700 text-white rounded shadow border border-slate-600 min-w-[150px]"
+              onClick={() => setDropdownOpen((open) => !open)}
+            >
+              {selectedLanguages.length === 0 ? (
+                <span className="text-slate-400">Selecciona idioma(s)</span>
+              ) : (
+                <div className="flex flex-wrap gap-1">
+                  {selectedLanguages.map(lang => (
+                    <span key={lang} className="flex items-center gap-1 bg-purple-600/30 px-2 py-0.5 rounded text-xs">
+                      {getLangLabel(lang)}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <svg className={`w-4 h-4 ml-2 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+            </button>
+            {dropdownOpen && (
+              <div className="absolute z-10 mt-2 w-full bg-slate-800 border border-slate-600 rounded shadow-lg max-h-60 overflow-y-auto">
+                {availableLanguages.map(lang => (
+                  <div
+                    key={lang}
+                    className={`flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-purple-600/20 ${selectedLanguages.includes(lang) ? 'bg-purple-600/10' : ''}`}
+                    onClick={() => handleLanguageChange(lang)}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedLanguages.includes(lang)}
+                      readOnly
+                      className="accent-purple-500"
+                    />
+                    {getLangLabel(lang)}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {chaptersLoading ? (
@@ -285,20 +380,22 @@ export default function MangaDetailPage() {
               <div key={index} className="animate-pulse bg-slate-700 h-16 rounded-lg"></div>
             ))}
           </div>
-        ) : chapters.length > 0 ? (
+        ) : filteredChapters.length > 0 ? (
           <div className="space-y-4">
             {/* Chapter Statistics */}
             <div className="flex items-center justify-between text-sm text-slate-400">
-              <span>Total: {chapters.length} capítulos</span>
+              <span>Total: {filteredChapters.length} capítulos</span>
               <span>
-                Último: Capítulo {chapters[chapters.length - 1]?.attributes.chapter}
+                Último: Capítulo {filteredChapters[filteredChapters.length - 1]?.attributes.chapter}
               </span>
             </div>
-            
             {/* Chapter List */}
             <div className="space-y-2 max-h-96 overflow-y-auto">
-              {chapters.map((chapter) => {
-                const chapterTitle = chapter.attributes.title as unknown as Record<string, string>;
+              {paginatedChapters.map((chapter) => {
+                const chapterTitle = chapter.attributes.title as unknown as Record<string, string> | null | undefined;
+                const titleEs = chapterTitle && typeof chapterTitle === 'object' ? chapterTitle.es : undefined;
+                const titleEn = chapterTitle && typeof chapterTitle === 'object' ? chapterTitle.en : undefined;
+                const titleFirst = chapterTitle && typeof chapterTitle === 'object' && Object.keys(chapterTitle).length > 0 ? chapterTitle[Object.keys(chapterTitle)[0]] : '';
                 return (
                   <div
                     key={chapter.id}
@@ -314,7 +411,7 @@ export default function MangaDetailPage() {
                           title={chapter.attributes.translatedLanguage}
                         />
                         Capítulo {chapter.attributes.chapter}
-                        {chapterTitle.es || chapterTitle.en || chapterTitle[Object.keys(chapterTitle)[0]] ? ` - ${chapterTitle.es || chapterTitle.en || chapterTitle[Object.keys(chapterTitle)[0]]}` : ''}
+                        {(titleEs || titleEn || titleFirst) ? ` - ${titleEs || titleEn || titleFirst}` : ''}
                       </h3>
                       <p className="text-slate-400 text-sm">
                         {new Date(chapter.attributes.publishAt).toLocaleDateString()}
@@ -325,18 +422,30 @@ export default function MangaDetailPage() {
                 );
               })}
             </div>
-            
-            {chapters.length > 20 && (
-              <div className="text-center">
-                <p className="text-slate-400 text-sm">
-                  Lista limitada por rendimiento. Usa el selector de idioma para filtrar.
-                </p>
+            {/* Paginación */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-4">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 rounded bg-slate-700 text-white disabled:opacity-50"
+                >
+                  Anterior
+                </button>
+                <span className="text-slate-300">Página {currentPage} de {totalPages}</span>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 rounded bg-slate-700 text-white disabled:opacity-50"
+                >
+                  Siguiente
+                </button>
               </div>
             )}
           </div>
         ) : (
           <div className="text-center py-8">
-            <p className="text-slate-400">No hay capítulos disponibles en {selectedLanguage === 'en' ? 'inglés' : selectedLanguage === 'es' ? 'español' : 'japonés'}</p>
+            <p className="text-slate-400">No hay capítulos disponibles en los idiomas seleccionados.</p>
           </div>
         )}
       </div>
