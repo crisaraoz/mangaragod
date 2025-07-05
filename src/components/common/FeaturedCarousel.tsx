@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { FiChevronLeft, FiChevronRight, FiBook, FiCalendar, FiSearch } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiBook, FiCalendar } from 'react-icons/fi';
 import { mangaDexService } from '@/services/mangadex';
+import { SearchBar } from '@/components/search/SearchBar';
 import type { Manga } from '@/types/manga';
 
 interface FeaturedCarouselProps {
@@ -24,7 +25,6 @@ const FeaturedCarousel: React.FC<FeaturedCarouselProps> = ({
   const [coverUrls, setCoverUrls] = useState<Record<string, string>>({});
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState(0);
-  const [searchQuery, setSearchQuery] = useState('');
   const autoSlideRef = useRef<NodeJS.Timeout | null>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
 
@@ -150,13 +150,6 @@ const FeaturedCarousel: React.FC<FeaturedCarouselProps> = ({
     }
   };
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      onSearch(searchQuery.trim());
-    }
-  };
-
   if (mangas.length === 0) {
     return null;
   }
@@ -206,7 +199,7 @@ const FeaturedCarousel: React.FC<FeaturedCarouselProps> = ({
     <div className={`relative bg-slate-900 ${className}`}>
       {/* Compact Header */}
       <div className="container mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-white">
               Descubre Mangas
@@ -216,24 +209,13 @@ const FeaturedCarousel: React.FC<FeaturedCarouselProps> = ({
             </p>
           </div>
           
-          {/* Compact Search */}
-          <div className="relative">
-            <form onSubmit={handleSearchSubmit} className="relative">
-              <input
-                type="text"
-                placeholder="Buscar manga..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-48 md:w-64 px-4 py-2 pl-10 bg-slate-800 text-white rounded-lg border border-slate-700 focus:border-purple-500 focus:outline-none transition-colors"
-              />
-              <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-              <button
-                type="submit"
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
-              >
-                <FiSearch className="w-4 h-4" />
-              </button>
-            </form>
+          {/* Search Bar with Real-time Search */}
+          <div className="w-full lg:w-auto lg:min-w-[300px]">
+            <SearchBar
+              onSearch={onSearch}
+              placeholder="Buscar manga..."
+              showSuggestions={true}
+            />
           </div>
         </div>
       </div>
