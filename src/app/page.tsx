@@ -108,22 +108,22 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-slate-900">
-      <main className="space-y-8">
+      <main className="space-y-6 sm:space-y-8 pb-6 sm:pb-8">
         {/* Featured Carousel with Integrated Header */}
         <FeaturedCarousel 
           mangas={featured} 
           onMangaClick={handleMangaClick}
           onSearch={handleSearch}
-          className="pb-4"
+          className="pb-2 sm:pb-4"
         />
 
         {/* AI Recommendations */}
-        <section className="container mx-auto px-4">
+        <section className="container mx-auto px-3 sm:px-4">
           <AIRecommendations />
         </section>
 
         {/* Popular Manga Carousel */}
-        <section className="container mx-auto px-4">
+        <section className="container mx-auto px-3 sm:px-4">
           <Carousel
             title="Populares"
             viewAllLink="/popular"
@@ -133,7 +133,7 @@ export default function HomePage() {
         </section>
 
         {/* Recently Added Carousel */}
-        <section className="container mx-auto px-4">
+        <section className="container mx-auto px-3 sm:px-4">
           <Carousel
             title="Recién Agregados"
             viewAllLink="/library"
@@ -143,7 +143,7 @@ export default function HomePage() {
         </section>
 
         {/* Trending Manga Carousel */}
-        <section className="container mx-auto px-4">
+        <section className="container mx-auto px-3 sm:px-4">
           <Carousel
             title="Tendencias"
             viewAllLink="/popular"
@@ -154,38 +154,39 @@ export default function HomePage() {
 
         {/* User Favorites */}
         {favorites.length > 0 && (
-          <section className="container mx-auto px-4 pb-8">
-            <div className="space-y-4">
+          <section className="container mx-auto px-3 sm:px-4 pb-4 sm:pb-8">
+            <div className="space-y-3 sm:space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-lg sm:text-xl font-bold text-white">
                   Tus Favoritos
                 </h2>
                 {favorites.length > 10 && (
                   <button
                     onClick={() => router.push('/favorites')}
-                    className="text-purple-400 hover:text-purple-300 text-sm font-medium"
+                    className="text-purple-400 hover:text-purple-300 text-xs sm:text-sm font-medium"
                   >
                     Ver todos ({favorites.length})
                   </button>
                 )}
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-3 md:gap-4">
                 {favorites.slice(0, 10).map((favorite) => (
                   <div
                     key={favorite.id}
                     onClick={() => handleMangaClick(favorite.id)}
                     className="cursor-pointer group"
                   >
-                    <div className="relative aspect-[3/4] bg-slate-700 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-200">
+                    <div className="relative aspect-[3/4] bg-slate-700 rounded-md sm:rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-200">
                       <Image
                         src={favorite.coverUrl}
                         alt={favorite.title}
                         fill
                         className="object-cover group-hover:scale-105 transition-transform duration-200"
+                        sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, 12.5vw"
                       />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200"></div>
                     </div>
-                    <h3 className="text-white text-sm font-medium mt-2 line-clamp-2 group-hover:text-purple-300 transition-colors">
+                    <h3 className="text-white text-xs sm:text-sm font-medium mt-1 sm:mt-2 line-clamp-2 group-hover:text-purple-300 transition-colors">
                       {favorite.title}
                     </h3>
                   </div>

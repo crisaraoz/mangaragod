@@ -16,7 +16,8 @@ const AIRecommendations: React.FC<AIRecommendationsProps> = ({ className = '' })
   const router = useRouter();
   const { favorites } = useMangaStore();
   const [recommendations, setRecommendations] = useState<AIRecommendation[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const loadRecommendations = useCallback(async () => {
@@ -33,6 +34,7 @@ const AIRecommendations: React.FC<AIRecommendationsProps> = ({ className = '' })
       if (response.ok) {
         const data = await response.json();
         setRecommendations(data.recommendations || []);
+        setHasLoaded(true);
       } else {
         console.error('Error loading recommendations:', response.statusText);
       }
@@ -42,10 +44,6 @@ const AIRecommendations: React.FC<AIRecommendationsProps> = ({ className = '' })
       setLoading(false);
     }
   }, [favorites]);
-
-  useEffect(() => {
-    loadRecommendations();
-  }, [loadRecommendations]);
 
   const refreshRecommendations = async () => {
     try {
@@ -99,81 +97,92 @@ const AIRecommendations: React.FC<AIRecommendationsProps> = ({ className = '' })
   };
 
   return (
-    <div className={`space-y-4 ${className}`}>
-      {/* Compact Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <div className="p-1.5 bg-purple-600/20 rounded-lg">
-            <FiZap className="w-4 h-4 text-purple-400" />
+    <div className={`space-y-3 sm:space-y-4 ${className}`}>
+      {/* Mobile Optimized Header */}
+      <div className="flex items-center justify-between gap-2 sm:gap-4">
+        <div className="flex items-center space-x-2 min-w-0 flex-1">
+          <div className="p-1 sm:p-1.5 bg-purple-600/20 rounded-lg flex-shrink-0">
+            <FiZap className="w-3 h-3 sm:w-4 sm:h-4 text-purple-400" />
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-white">Recomendaciones de IA</h2>
-            <p className="text-slate-400 text-xs">
-              {favorites.length > 0 
-                ? `Basado en tus ${favorites.length} favoritos`
-                : 'Descubre nuevos mangas populares'
+          <div className="min-w-0 flex-1">
+            <h2 className="text-base sm:text-xl font-bold text-white truncate">
+              Recomendaciones de IA
+            </h2>
+            <p className="text-slate-400 text-xs hidden sm:block">
+              {!hasLoaded 
+                ? favorites.length > 0 
+                  ? `Listo para analizar tus mangas favoritos`
+                  : 'Descubre mangas populares con IA'
+                : favorites.length > 0 
+                  ? `Basado en tus ${favorites.length} favoritos`
+                  : 'Recomendaciones populares'
               }
             </p>
           </div>
         </div>
         
+        {/* Mobile Optimized Button */}
         <button
-          onClick={refreshRecommendations}
-          disabled={refreshing}
-          className="flex items-center space-x-1 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors disabled:opacity-50"
+          onClick={hasLoaded ? refreshRecommendations : loadRecommendations}
+          disabled={loading || refreshing}
+          className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50 flex-shrink-0"
         >
-          <FiRefreshCw className={`w-3 h-3 ${refreshing ? 'animate-spin' : ''}`} />
-          <span className="text-xs">Actualizar</span>
+          <FiRefreshCw className={`w-3 h-3 sm:w-4 sm:h-4 ${(loading || refreshing) ? 'animate-spin' : ''}`} />
+          <span className="text-xs sm:text-sm whitespace-nowrap">
+            {hasLoaded ? 'Actualizar' : 'Ver IA'}
+          </span>
         </button>
       </div>
 
-      {/* Compact Recommendations */}
-      <div className="bg-slate-800/30 rounded-lg border border-slate-700/30 overflow-hidden">
-        {loading ? (
-          <div className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {Array.from({ length: 4 }).map((_, index) => (
-                <div key={index} className="flex items-center space-x-3 p-3 bg-slate-700/30 rounded-lg animate-pulse">
-                  <div className="w-12 h-16 bg-slate-600 rounded"></div>
-                  <div className="flex-1 space-y-2">
-                    <div className="h-3 bg-slate-600 rounded w-3/4"></div>
-                    <div className="h-2 bg-slate-600 rounded w-1/2"></div>
-                    <div className="h-2 bg-slate-600 rounded w-2/3"></div>
+      {/* Solo mostrar la caja de contenido cuando se ha cargado o está cargando */}
+      {(hasLoaded || loading) && (
+        <div className="bg-slate-800/30 rounded-lg border border-slate-700/30 overflow-hidden">
+          {loading ? (
+            <div className="p-3 sm:p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div key={index} className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 bg-slate-700/30 rounded-lg animate-pulse">
+                    <div className="w-10 h-14 sm:w-12 sm:h-16 bg-slate-600 rounded"></div>
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3 bg-slate-600 rounded w-3/4"></div>
+                      <div className="h-2 bg-slate-600 rounded w-1/2"></div>
+                      <div className="h-2 bg-slate-600 rounded w-2/3"></div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        ) : recommendations.length > 0 ? (
-          <div className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {recommendations.map((rec) => (
-                <AIRecommendationCard
-                  key={rec.manga.id}
-                  recommendation={rec}
-                  onClick={() => handleMangaClick(rec.manga.id)}
-                  getCategoryIcon={getCategoryIcon}
-                  getCategoryLabel={getCategoryLabel}
-                  getConfidenceColor={getConfidenceColor}
-                />
-              ))}
+          ) : recommendations.length > 0 ? (
+            <div className="p-3 sm:p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3">
+                {recommendations.map((rec) => (
+                  <AIRecommendationCard
+                    key={rec.manga.id}
+                    recommendation={rec}
+                    onClick={() => handleMangaClick(rec.manga.id)}
+                    getCategoryIcon={getCategoryIcon}
+                    getCategoryLabel={getCategoryLabel}
+                    getConfidenceColor={getConfidenceColor}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <FiZap className="w-8 h-8 text-slate-500 mx-auto mb-3" />
-            <h3 className="text-base font-medium text-slate-300 mb-2">
-              No hay recomendaciones disponibles
-            </h3>
-            <p className="text-slate-400 text-sm">
-              {favorites.length === 0 
-                ? 'Agrega algunos mangas a tus favoritos para recibir recomendaciones personalizadas'
-                : 'Intenta actualizar las recomendaciones'
-              }
-            </p>
-          </div>
-        )}
-      </div>
+          ) : (
+            <div className="text-center py-6 sm:py-8 px-3 sm:px-4">
+              <FiZap className="w-6 h-6 sm:w-8 sm:h-8 text-slate-500 mx-auto mb-2 sm:mb-3" />
+              <h3 className="text-sm sm:text-base font-medium text-slate-300 mb-2">
+                No hay recomendaciones disponibles
+              </h3>
+              <p className="text-slate-400 text-xs sm:text-sm">
+                {favorites.length === 0 
+                  ? 'Agrega algunos mangas a tus favoritos para recibir recomendaciones personalizadas'
+                  : 'Intenta actualizar las recomendaciones'
+                }
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
@@ -223,11 +232,11 @@ const AIRecommendationCard: React.FC<AIRecommendationCardProps> = ({
 
   return (
     <div 
-      className="flex items-center space-x-3 p-3 bg-slate-700/30 hover:bg-slate-700/50 rounded-lg transition-colors cursor-pointer group"
+      className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 bg-slate-700/30 hover:bg-slate-700/50 rounded-lg transition-colors cursor-pointer group"
       onClick={onClick}
     >
-      {/* Cover Image */}
-      <div className="relative w-12 h-16 flex-shrink-0 bg-slate-600 rounded overflow-hidden">
+      {/* Mobile Optimized Cover Image */}
+      <div className="relative w-10 h-14 sm:w-12 sm:h-16 flex-shrink-0 bg-slate-600 rounded overflow-hidden">
         {coverUrl && !imageError ? (
           <Image
             src={coverUrl}
@@ -239,44 +248,44 @@ const AIRecommendationCard: React.FC<AIRecommendationCardProps> = ({
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <FiBook className="w-6 h-6 text-slate-400" />
+            <FiBook className="w-4 h-4 sm:w-6 sm:h-6 text-slate-400" />
           </div>
         )}
       </div>
 
-      {/* Content */}
+      {/* Mobile Optimized Content */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between mb-2">
-          <h3 className="text-white font-medium text-sm truncate group-hover:text-purple-300 transition-colors">
+        <div className="flex items-start justify-between mb-1 sm:mb-2">
+          <h3 className="text-white font-medium text-xs sm:text-sm truncate group-hover:text-purple-300 transition-colors pr-1">
             {title}
           </h3>
-          <div className="flex items-center space-x-1 ml-2">
+          <div className="flex items-center space-x-1 ml-1 flex-shrink-0">
             {getCategoryIcon(recommendation.category)}
           </div>
         </div>
         
         <div className="space-y-1">
-          <p className="text-slate-300 text-xs leading-relaxed">
+          <p className="text-slate-300 text-xs leading-relaxed line-clamp-2 sm:line-clamp-3">
             {recommendation.reason}
           </p>
           
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              {genres.map((genre, index) => (
+            <div className="flex items-center space-x-1 sm:space-x-2 overflow-hidden">
+              {genres.slice(0, 1).map((genre, index) => (
                 <span
                   key={index}
-                  className="px-2 py-1 bg-purple-500/10 text-purple-300 text-xs rounded"
+                  className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-purple-500/10 text-purple-300 text-xs rounded truncate"
                 >
                   {genre}
                 </span>
               ))}
             </div>
             
-            <div className="flex items-center space-x-2">
-              <span className="text-xs text-slate-400">
+            <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+              <span className="text-xs text-slate-400 hidden sm:inline">
                 {getCategoryLabel(recommendation.category)}
               </span>
-              <div className={`text-xs ${getConfidenceColor(recommendation.confidence)}`}>
+              <div className={`text-xs font-medium ${getConfidenceColor(recommendation.confidence)}`}>
                 {Math.round(recommendation.confidence * 100)}%
               </div>
             </div>
