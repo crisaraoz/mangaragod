@@ -30,14 +30,13 @@ const nextConfig: NextConfig = {
       },
     ],
     // Configuración adicional para imágenes
-    domains: [
-      'uploads.mangadex.org',
-      'mangadex.org',
-    ],
+          domains: [
+        'uploads.mangadex.org',
+        'mangadex.org',
+      ],
     // Configuración para manejar errores de imágenes
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    unoptimized: true, // Deshabilitar optimización para imágenes externas
   },
   // Configuración para proxy API y evitar CORS
   async rewrites() {
@@ -45,28 +44,6 @@ const nextConfig: NextConfig = {
       {
         source: '/api/mangadex/:path*',
         destination: 'https://api.mangadex.org/:path*',
-      },
-    ];
-  },
-  // Configuración para CORS si es necesario
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'Access-Control-Allow-Origin',
-            value: '*',
-          },
-          {
-            key: 'Access-Control-Allow-Methods',
-            value: 'GET, POST, PUT, DELETE, OPTIONS',
-          },
-          {
-            key: 'Access-Control-Allow-Headers',
-            value: 'Content-Type, Authorization',
-          },
-        ],
       },
     ];
   },
