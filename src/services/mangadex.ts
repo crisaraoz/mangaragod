@@ -103,27 +103,11 @@ class MangaDexService {
     }
   }
 
-  // Obtener URL de la imagen de portada
+  // Obtener URL de la imagen de portada (a través de nuestro proxy)
   getCoverUrl(mangaId: string, fileName: string, size: 'small' | 'medium' | 'large' = 'medium'): string {
-    const sizeMap = {
-      small: '256',
-      medium: '512',
-      large: '1024'
-    };
-    const coversBaseUrl = process.env.NEXT_PUBLIC_MANGADEX_COVERS_URL || 'https://uploads.mangadex.org/covers';
-    
-    // Según la documentación oficial de MangaDex:
-    // Para miniaturas: https://uploads.mangadex.org/covers/:manga-id/:cover-filename.{256,512}.jpg
-    // IMPORTANTE: Se mantiene el nombre completo del archivo CON su extensión original
-    // Ejemplo: archivo.png -> archivo.png.256.jpg
-    
-    if (size === 'large') {
-      // Para tamaño grande, usar la imagen original sin thumbnail
-      return `${coversBaseUrl}/${mangaId}/${fileName}`;
-    } else {
-      // Para small/medium, usar thumbnails con formato: filename.extension.size.jpg
-      return `${coversBaseUrl}/${mangaId}/${fileName}.${sizeMap[size]}.jpg`;
-    }
+    // Usar nuestra ruta proxy en lugar de la URL directa de MangaDx
+    // Esto evita el problema de hotlink en producción
+    return `/api/covers/${mangaId}/${fileName}?size=${size}`;
   }
 
   // Obtener información específica de cover_art
