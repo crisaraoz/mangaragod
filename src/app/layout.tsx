@@ -22,7 +22,7 @@ export default function RootLayout({
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
           <Sidebar />
           <DynamicLayout>
-            {children}
+        {children}
           </DynamicLayout>
         </div>
       </body>

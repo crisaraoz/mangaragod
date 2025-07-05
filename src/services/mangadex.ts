@@ -1,3 +1,4 @@
+/* eslint-disable import/no-anonymous-default-export */
 import axios from 'axios';
 import type { 
   MangaResponse, 
@@ -6,7 +7,11 @@ import type {
   Manga 
 } from '@/types/manga';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_MANGADEX_API_URL || 'https://api.mangadex.org';
+// Detectar si estamos en el servidor o en el cliente
+const isServer = typeof window === 'undefined';
+const API_BASE_URL = isServer 
+  ? process.env.NEXT_PUBLIC_MANGADEX_API_URL || 'https://api.mangadex.org'
+  : '/api/mangadex';
 
 class MangaDexService {
   private api;
@@ -14,7 +19,7 @@ class MangaDexService {
   constructor() {
     this.api = axios.create({
       baseURL: API_BASE_URL,
-      timeout: 10000,
+      timeout: 15000,
       headers: {
         'Content-Type': 'application/json',
       },
@@ -197,23 +202,30 @@ class MangaDexService {
   }
 
   // Obtener TODOS los capítulos de un manga (maneja paginación automáticamente)
-  async getAllChapters(mangaId: string, language: string[] = ['en']) {
+  async getAllChapters(mangaId: string, language: string[] = ['en']): Promise<ChapterResponse> {
     try {
-      let allChapters: ChapterResponse['data'] = [];
+      const allChapters: ChapterResponse['data'] = [];
       let offset = 0;
-      const limit = 500; // Límite máximo por request
+      const limit = 100;
       let hasMore = true;
 
       while (hasMore) {
         const response = await this.getChapters(mangaId, language, limit, offset);
-        allChapters = allChapters.concat(response.data);
+        allChapters.push(...response.data);
         
         // Verificar si hay más capítulos
         hasMore = response.data.length === limit;
         offset += limit;
       }
 
-      return allChapters;
+      return {
+        data: allChapters,
+        limit: allChapters.length,
+        offset: 0,
+        total: allChapters.length,
+        result: 'ok',
+        response: 'collection'
+      };
     } catch (error) {
       console.error('Error getting all chapters:', error);
       throw error;
@@ -221,4 +233,5 @@ class MangaDexService {
   }
 }
 
+export default new MangaDexService();
 export const mangaDexService = new MangaDexService(); 

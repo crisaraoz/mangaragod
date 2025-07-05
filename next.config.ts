@@ -43,8 +43,8 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: '/api/mangadx/:path*',
-        destination: 'https://api.mangadx.org/:path*',
+        source: '/api/mangadex/:path*',
+        destination: 'https://api.mangadex.org/:path*',
       },
     ];
   },
