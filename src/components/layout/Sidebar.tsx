@@ -68,10 +68,7 @@ export function Sidebar() {
       label: 'Leyendo',
       icon: FiBookmark,
       description: 'Continuar leyendo'
-    }
-  ];
-
-  const bottomNavItems = [
+    },
     {
       href: '/settings',
       label: 'Configuración',
@@ -148,7 +145,7 @@ export function Sidebar() {
           </div>
 
           {/* Navigation */}
-          <nav className={`flex-1 overflow-y-auto ${isCollapsed ? 'px-2 py-4' : 'p-4'}`}>
+          <nav className={`flex-1 ${isCollapsed ? 'px-2 py-4' : 'p-4'}`}>
             <div className="space-y-2">
               {navItems.map(({ href, label, icon: Icon, description, badge }) => (
                 <Link
@@ -202,48 +199,10 @@ export function Sidebar() {
             </div>
           </nav>
 
-          {/* Bottom Navigation */}
-          <div className={`border-t border-slate-700/50 ${isCollapsed ? 'px-2 py-4' : 'p-4'}`}>
-            <div className="space-y-2">
-              {bottomNavItems.map(({ href, label, icon: Icon, description }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`
-                    group relative flex items-center transition-all duration-200 rounded-xl
-                    ${isCollapsed 
-                      ? 'justify-center p-3 mx-1' 
-                      : 'space-x-3 p-3'
-                    }
-                    ${pathname === href
-                      ? 'bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-400 border border-purple-500/30'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-                    }
-                  `}
-                  title={isCollapsed ? label : undefined}
-                >
-                  <Icon className={`w-5 h-5 ${pathname === href ? 'text-purple-400' : ''}`} />
-                  
-                  {!isCollapsed && (
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium">{label}</div>
-                      <div className="text-xs text-slate-500">{description}</div>
-                    </div>
-                  )}
-
-                  {/* Tooltip for collapsed state */}
-                  {isCollapsed && (
-                    <div className="absolute left-full ml-3 px-3 py-2 bg-slate-800 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                      {label}
-                    </div>
-                  )}
-                </Link>
-              ))}
-            </div>
-
-            {/* User Stats */}
+          {/* User Stats - Moved to bottom */}
+          <div className={`${isCollapsed ? 'px-2 py-4' : 'p-4'}`}>
             {!isCollapsed && (
-              <div className="mt-4 p-3 bg-slate-800/30 rounded-xl">
+              <div className="p-3 bg-slate-800/30 rounded-xl">
                 <div className="text-xs text-slate-400 mb-2">Estadísticas</div>
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-300">Favoritos:</span>
@@ -260,7 +219,7 @@ export function Sidebar() {
 
             {/* Collapsed Stats */}
             {isCollapsed && (
-              <div className="mt-2 flex flex-col items-center space-y-2">
+              <div className="flex flex-col items-center space-y-2">
                 <div className="group relative w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center">
                   <span className="text-purple-400 font-bold text-xs">{favorites.length}</span>
                   <div className="absolute left-full ml-3 px-3 py-2 bg-slate-800 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
