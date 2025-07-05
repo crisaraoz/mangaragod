@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { FiBook, FiZap, FiTrendingUp, FiHeart, FiEye, FiRefreshCw } from 'react-icons/fi';
@@ -19,11 +19,7 @@ const AIRecommendations: React.FC<AIRecommendationsProps> = ({ className = '' })
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadRecommendations();
-  }, [favorites]);
-
-  const loadRecommendations = async () => {
+  const loadRecommendations = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/recommendations', {
@@ -45,7 +41,11 @@ const AIRecommendations: React.FC<AIRecommendationsProps> = ({ className = '' })
     } finally {
       setLoading(false);
     }
-  };
+  }, [favorites]);
+
+  useEffect(() => {
+    loadRecommendations();
+  }, [loadRecommendations]);
 
   const refreshRecommendations = async () => {
     try {

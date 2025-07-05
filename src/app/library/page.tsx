@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { FiBook, FiFilter, FiGrid, FiList } from 'react-icons/fi';
+import { FiBook, FiGrid, FiList } from 'react-icons/fi';
 import { useMangaStore } from '@/store/mangaStore';
-import { MangaCard } from '@/components/manga/MangaCard';
 import { FavoriteManga } from '@/types/manga';
+import Image from 'next/image';
 
 export default function LibraryPage() {
   const { getFavoriteByStatus, favorites } = useMangaStore();
@@ -111,10 +111,11 @@ export default function LibraryPage() {
                 <div key={favorite.id} className="group relative">
                   <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl overflow-hidden border border-slate-700/50 hover:border-purple-500/50 transition-all duration-300 hover:scale-105">
                     <div className="relative aspect-[3/4] bg-slate-700">
-                      <img
+                      <Image
                         src={favorite.coverUrl}
                         alt={favorite.title}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
                       />
                     </div>
                     <div className="p-4">
@@ -145,10 +146,12 @@ export default function LibraryPage() {
                 <div key={favorite.id} className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6">
                   <div className="flex items-center space-x-4">
                     <div className="flex-shrink-0">
-                      <img
+                      <Image
                         src={favorite.coverUrl}
                         alt={favorite.title}
-                        className="w-16 h-20 object-cover rounded-lg"
+                        width={64}
+                        height={80}
+                        className="object-cover rounded-lg"
                       />
                     </div>
                     <div className="flex-1">

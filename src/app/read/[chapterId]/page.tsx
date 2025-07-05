@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { FiArrowLeft, FiArrowRight, FiSettings, FiChevronLeft, FiChevronRight, FiAlertCircle } from 'react-icons/fi';
 import { mangaDexService } from '@/services/mangadex';
 import { useMangaStore } from '@/store/mangaStore';
-import { ImageDebug } from '@/components/debug/ImageDebug';
 import type { AtHomeResponse } from '@/types/manga';
 
 export default function ChapterReaderPage() {
@@ -27,28 +26,7 @@ export default function ChapterReaderPage() {
 
   const chapterId = params.chapterId as string;
 
-  useEffect(() => {
-    if (chapterId) {
-      loadChapterPages();
-    }
-  }, [chapterId]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') {
-        previousPage();
-      } else if (e.key === 'ArrowRight') {
-        nextPage();
-      } else if (e.key === 'Escape') {
-        router.back();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentPage, chapterData]);
-
-  const loadChapterPages = async () => {
+  const loadChapterPages = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -78,21 +56,42 @@ export default function ChapterReaderPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [chapterId]);
 
-  const nextPage = () => {
+  const nextPage = useCallback(() => {
     if (chapterData && currentPage < chapterData.chapter.data.length - 1) {
       setCurrentPage(currentPage + 1);
       scrollToTop();
     }
-  };
+  }, [chapterData, currentPage]);
 
-  const previousPage = () => {
+  const previousPage = useCallback(() => {
     if (currentPage > 0) {
       setCurrentPage(currentPage - 1);
       scrollToTop();
     }
-  };
+  }, [currentPage]);
+
+  useEffect(() => {
+    if (chapterId) {
+      loadChapterPages();
+    }
+  }, [chapterId, loadChapterPages]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        previousPage();
+      } else if (e.key === 'ArrowRight') {
+        nextPage();
+      } else if (e.key === 'Escape') {
+        router.back();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [nextPage, previousPage, router]);
 
   const scrollToTop = () => {
     if (containerRef.current) {
@@ -374,14 +373,12 @@ export default function ChapterReaderPage() {
       </div>
       
       {/* Debug Component - Solo en desarrollo */}
-      {process.env.NODE_ENV === 'development' && chapterData && (
+      {/* {process.env.NODE_ENV === 'development' && chapterData && (
         <ImageDebug
-          src={currentPageUrl}
-          chapterHash={chapterData.chapter.hash}
-          baseUrl={chapterData.baseUrl}
+          mangaId="debug"
           fileName={chapterData.chapter.data[currentPage]}
         />
-      )}
+      )} */}
     </div>
   );
 } 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { FiHeart, FiTrash2, FiEdit3 } from 'react-icons/fi';
+import Image from 'next/image';
 import { useMangaStore } from '@/store/mangaStore';
 import { FavoriteManga } from '@/types/manga';
 
@@ -95,9 +96,11 @@ export default function FavoritesPage() {
           {sortedFavorites.map((favorite) => (
             <div key={favorite.id} className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 overflow-hidden">
               <div className="relative">
-                <img
+                <Image
                   src={favorite.coverUrl}
                   alt={favorite.title}
+                  width={400}
+                  height={192}
                   className="w-full h-48 object-cover"
                 />
                 <div className="absolute top-2 right-2 flex space-x-2">

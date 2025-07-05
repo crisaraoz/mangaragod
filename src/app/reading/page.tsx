@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { FiBookmark, FiGrid, FiList, FiPlay, FiClock, FiBook } from 'react-icons/fi';
 import { useMangaStore } from '@/store/mangaStore';
-import { MangaCardCompact } from '@/components/manga/MangaCardCompact';
 import Link from 'next/link';
+import Image from 'next/image';
+import type { FavoriteManga, ReadingProgress } from '@/types/manga';
 
 export default function ReadingPage() {
   const { favorites, readingProgress } = useMangaStore();
@@ -14,13 +15,13 @@ export default function ReadingPage() {
   const readingManga = favorites.filter(fav => fav.status === 'reading');
   
   // Obtener mangas con progreso de lectura
-  const recentlyRead = Object.entries(readingProgress)
-    .map(([mangaId, progress]) => {
-      const manga = favorites.find(fav => fav.id === mangaId);
+  const recentlyRead = readingProgress
+    .map((progress) => {
+      const manga = favorites.find(fav => fav.id === progress.mangaId);
       return manga ? { manga, progress } : null;
     })
-    .filter(Boolean)
-    .sort((a, b) => new Date(b!.progress.lastRead).getTime() - new Date(a!.progress.lastRead).getTime())
+    .filter((item): item is { manga: FavoriteManga; progress: ReadingProgress } => item !== null)
+    .sort((a, b) => new Date(b.progress.updatedAt).getTime() - new Date(a.progress.updatedAt).getTime())
     .slice(0, 10);
 
   return (
@@ -83,9 +84,9 @@ export default function ReadingPage() {
             <FiBook className="w-6 h-6 text-blue-400" />
             <div>
               <div className="text-xl font-bold text-white">
-                {Object.values(readingProgress).reduce((acc, progress) => acc + progress.chapters.length, 0)}
+                {readingProgress.length}
               </div>
-              <div className="text-xs text-slate-400">Capítulos leídos</div>
+              <div className="text-xs text-slate-400">Mangas con progreso</div>
             </div>
           </div>
         </div>
@@ -125,16 +126,15 @@ export default function ReadingPage() {
                     
                     <div className="flex-1">
                       <h3 className="text-white font-medium mb-1">
-                        {manga.attributes.title.en || 
-                         manga.attributes.title[Object.keys(manga.attributes.title)[0]]}
+                        {manga.title}
                       </h3>
                       <p className="text-slate-400 text-sm mb-2">
-                        Último capítulo leído: {progress.chapters[progress.chapters.length - 1] || 'N/A'}
+                        Último capítulo leído: {progress.lastChapterNumber || 'N/A'}
                       </p>
                       <div className="flex items-center space-x-4 text-xs text-slate-500">
-                        <span>{progress.chapters.length} capítulos leídos</span>
+                        <span>Progreso: {Math.round(progress.progress)}%</span>
                         <span>•</span>
-                        <span>{new Date(progress.lastRead).toLocaleDateString()}</span>
+                        <span>{new Date(progress.updatedAt).toLocaleDateString()}</span>
                       </div>
                     </div>
                   </div>
@@ -171,7 +171,38 @@ export default function ReadingPage() {
             : 'grid-cols-1'
           }`}>
             {readingManga.map((favorite) => (
-              <MangaCardCompact key={favorite.id} manga={favorite} variant={viewMode} />
+              <div key={favorite.id} className="bg-slate-800/30 rounded-xl border border-slate-700/30 overflow-hidden hover:border-purple-500/50 transition-all duration-300 hover:scale-105">
+                <Link href={`/manga/${favorite.id}`}>
+                  <div className="relative aspect-[3/4] bg-slate-700">
+                    <Image
+                      src={favorite.coverUrl}
+                      alt={favorite.title}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    />
+                  </div>
+                  <div className="p-3">
+                    <h3 className="text-white font-medium text-sm line-clamp-2 mb-1">
+                      {favorite.title}
+                    </h3>
+                    <div className="flex items-center justify-between">
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        favorite.status === 'reading' ? 'bg-green-500/20 text-green-300' :
+                        favorite.status === 'completed' ? 'bg-blue-500/20 text-blue-300' :
+                        favorite.status === 'plan-to-read' ? 'bg-yellow-500/20 text-yellow-300' :
+                        'bg-red-500/20 text-red-300'
+                      }`}>
+                        {favorite.status === 'reading' ? 'Leyendo' :
+                         favorite.status === 'completed' ? 'Completado' :
+                         favorite.status === 'plan-to-read' ? 'Planificado' :
+                         'Abandonado'
+                        }
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              </div>
             ))}
           </div>
         ) : (

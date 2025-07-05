@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { mangaDexService } from '@/services/mangadex';
 
 interface ImageDebugProps {
@@ -116,9 +117,11 @@ const ImageDebug: React.FC<ImageDebugProps> = ({ mangaId, fileName, className = 
                 </div>
                 {debugInfo.status[size] === 'success' && (
                   <div className="mt-1">
-                    <img 
+                    <Image 
                       src={debugInfo[size]} 
                       alt={`${size} preview`}
+                      width={64}
+                      height={80}
                       className="w-16 h-20 object-cover rounded"
                     />
                   </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { FiBook, FiStar, FiHeart, FiPlay, FiArrowLeft, FiCalendar, FiUser, FiTag } from 'react-icons/fi';
@@ -23,19 +23,7 @@ export default function MangaDetailPage() {
 
   const mangaId = params.id as string;
 
-  useEffect(() => {
-    if (mangaId) {
-      loadMangaDetails();
-    }
-  }, [mangaId]);
-
-  useEffect(() => {
-    if (manga) {
-      loadChapters();
-    }
-  }, [manga, selectedLanguage]);
-
-  const loadMangaDetails = async () => {
+  const loadMangaDetails = useCallback(async () => {
     try {
       setLoading(true);
       const mangaData = await mangaDexService.getManga(mangaId);
@@ -45,9 +33,9 @@ export default function MangaDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [mangaId]);
 
-  const loadChapters = async () => {
+  const loadChapters = useCallback(async () => {
     try {
       setChaptersLoading(true);
       
@@ -84,7 +72,19 @@ export default function MangaDetailPage() {
     } finally {
       setChaptersLoading(false);
     }
-  };
+  }, [mangaId, selectedLanguage]);
+
+  useEffect(() => {
+    if (mangaId) {
+      loadMangaDetails();
+    }
+  }, [mangaId, loadMangaDetails]);
+
+  useEffect(() => {
+    if (manga) {
+      loadChapters();
+    }
+  }, [manga, selectedLanguage, loadChapters]);
 
   if (loading) {
     return (

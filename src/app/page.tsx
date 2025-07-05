@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { mangaDexService } from '@/services/mangadex';
 import FeaturedCarousel from '@/components/common/FeaturedCarousel';
 import Carousel from '@/components/common/Carousel';
@@ -176,10 +177,11 @@ export default function HomePage() {
                     className="cursor-pointer group"
                   >
                     <div className="relative aspect-[3/4] bg-slate-700 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-200">
-                      <img
+                      <Image
                         src={favorite.coverUrl}
                         alt={favorite.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-200"
                       />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200"></div>
                     </div>
