@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { FiArrowLeft, FiArrowRight, FiChevronLeft, FiChevronRight, FiAlertCircle, FiMaximize2 } from 'react-icons/fi';
+import { FiArrowLeft, FiChevronLeft, FiChevronRight, FiAlertCircle, FiMaximize2 } from 'react-icons/fi';
 import { mangaDexService } from '@/services/mangadex';
 import { useMangaStore } from '@/store/mangaStore';
 import type { AtHomeResponse, Chapter } from '@/types/manga';
@@ -123,17 +125,6 @@ export default function ChapterReaderPage() {
   const goToPage = (pageIndex: number) => {
     setCurrentPage(pageIndex);
     scrollToTop();
-  };
-
-  const retryCurrentPage = () => {
-    setImageLoadingStates(prev => ({
-      ...prev,
-      [currentPage]: true
-    }));
-    setImageErrors(prev => ({
-      ...prev,
-      [currentPage]: false
-    }));
   };
 
   // Cargar metadatos del capítulo y todos los capítulos del manga

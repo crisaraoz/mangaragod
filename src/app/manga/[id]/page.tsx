@@ -10,21 +10,6 @@ import type { Manga, Chapter } from '@/types/manga';
 import ImageDebug from '@/components/debug/ImageDebug';
 import ReactCountryFlag from 'react-country-flag';
 
-function getFlagByLanguage(lang: string) {
-  switch (lang) {
-    case 'es': return '🇦🇷'; // Español (Argentina)
-    case 'en': return '🇺🇸'; // Inglés (Estados Unidos)
-    case 'ja': return '🇯🇵'; // Japonés
-    case 'fr': return '🇫🇷'; // Francés
-    case 'it': return '🇮🇹'; // Italiano
-    case 'pt': return '🇧🇷'; // Portugués (Brasil)
-    case 'de': return '🇩🇪'; // Alemán
-    case 'ru': return '🇷🇺'; // Ruso
-    case 'zh': return '🇨🇳'; // Chino
-    default: return '🏳️'; // Otro/no definido
-  }
-}
-
 function getCountryCode(lang: string) {
   switch (lang) {
     case 'es': return 'AR'; // Español (Argentina)
@@ -312,30 +297,33 @@ export default function MangaDetailPage() {
             
             {/* Chapter List */}
             <div className="space-y-2 max-h-96 overflow-y-auto">
-              {chapters.map((chapter) => (
-                <div
-                  key={chapter.id}
-                  onClick={() => handleReadChapter(chapter.id)}
-                  className="flex items-center justify-between p-4 bg-slate-700/50 hover:bg-slate-600/50 rounded-lg cursor-pointer transition-colors"
-                >
-                  <div className="flex-1">
-                    <h3 className="text-white font-medium">
-                      <ReactCountryFlag
-                        countryCode={getCountryCode(chapter.attributes.translatedLanguage)}
-                        svg
-                        style={{ width: '1.5em', height: '1.5em', marginRight: '0.5em', verticalAlign: 'middle' }}
-                        title={chapter.attributes.translatedLanguage}
-                      />
-                      Capítulo {chapter.attributes.chapter}
-                      {chapter.attributes.title && typeof chapter.attributes.title === 'object' ? (chapter.attributes.title.es || chapter.attributes.title.en || chapter.attributes.title[Object.keys(chapter.attributes.title)[0]] ? ` - ${chapter.attributes.title.es || chapter.attributes.title.en || chapter.attributes.title[Object.keys(chapter.attributes.title)[0]]}` : '') : ''}
-                    </h3>
-                    <p className="text-slate-400 text-sm">
-                      {new Date(chapter.attributes.publishAt).toLocaleDateString()}
-                    </p>
+              {chapters.map((chapter) => {
+                const chapterTitle = chapter.attributes.title as unknown as Record<string, string>;
+                return (
+                  <div
+                    key={chapter.id}
+                    onClick={() => handleReadChapter(chapter.id)}
+                    className="flex items-center justify-between p-4 bg-slate-700/50 hover:bg-slate-600/50 rounded-lg cursor-pointer transition-colors"
+                  >
+                    <div className="flex-1">
+                      <h3 className="text-white font-medium">
+                        <ReactCountryFlag
+                          countryCode={getCountryCode(chapter.attributes.translatedLanguage)}
+                          svg
+                          style={{ width: '1.5em', height: '1.5em', marginRight: '0.5em', verticalAlign: 'middle' }}
+                          title={chapter.attributes.translatedLanguage}
+                        />
+                        Capítulo {chapter.attributes.chapter}
+                        {chapterTitle.es || chapterTitle.en || chapterTitle[Object.keys(chapterTitle)[0]] ? ` - ${chapterTitle.es || chapterTitle.en || chapterTitle[Object.keys(chapterTitle)[0]]}` : ''}
+                      </h3>
+                      <p className="text-slate-400 text-sm">
+                        {new Date(chapter.attributes.publishAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <FiPlay className="w-5 h-5 text-purple-400" />
                   </div>
-                  <FiPlay className="w-5 h-5 text-purple-400" />
-                </div>
-              ))}
+                );
+              })}
             </div>
             
             {chapters.length > 20 && (
