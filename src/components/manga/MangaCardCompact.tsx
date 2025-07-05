@@ -18,7 +18,6 @@ export function MangaCardCompact({ manga, variant = 'grid' }: MangaCardCompactPr
   const { addToFavorites, favorites } = useMangaStore();
   const [imageError, setImageError] = useState(false);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
-  const [isHovered, setIsHovered] = useState(false);
 
   // Obtener información del manga
   const title = manga.attributes.title.en || 
@@ -52,10 +51,6 @@ export function MangaCardCompact({ manga, variant = 'grid' }: MangaCardCompactPr
     loadCoverUrl();
   }, [manga.id, coverRelation?.id]);
 
-  // Obtener autor
-  const author = manga.relationships.find(rel => rel.type === 'author');
-  const authorName = author?.attributes?.name || 'Autor desconocido';
-
   // Verificar si está en favoritos
   const isFavorite = favorites.some(fav => fav.id === manga.id);
 
@@ -64,22 +59,60 @@ export function MangaCardCompact({ manga, variant = 'grid' }: MangaCardCompactPr
     tag.attributes.name.en || tag.attributes.name[Object.keys(tag.attributes.name)[0]]
   );
 
-  const handleAddToFavorites = (e: React.MouseEvent) => {
+  // Variables adicionales para móvil
+  const rating = manga.attributes.year || 0; // Simulando rating con año por ahora
+  const status = manga.attributes.status;
+  const tags = mainTags;
+  const lastUpdate = new Date();
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'ongoing': return 'En curso';
+      case 'completed': return 'Completado';
+      case 'hiatus': return 'En pausa';
+      case 'cancelled': return 'Cancelado';
+      default: return 'Desconocido';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'ongoing': return 'bg-green-500/20 text-green-400';
+      case 'completed': return 'bg-blue-500/20 text-blue-400';
+      case 'hiatus': return 'bg-yellow-500/20 text-yellow-400';
+      case 'cancelled': return 'bg-red-500/20 text-red-400';
+      default: return 'bg-gray-500/20 text-gray-400';
+    }
+  };
+
+  const formatLastUpdate = (date: Date) => {
+    const now = new Date();
+    const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffInDays === 0) return 'Hoy';
+    if (diffInDays === 1) return 'Ayer';
+    if (diffInDays < 7) return `${diffInDays}d`;
+    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)}s`;
+    return `${Math.floor(diffInDays / 30)}m`;
+  };
+
+  const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     addToFavorites(manga, 'plan-to-read');
   };
 
-  if (variant === 'list') {
-    return (
-      <Link href={`/manga/${manga.id}`}>
-        <div 
-          className="flex items-center space-x-4 p-4 bg-slate-800/30 hover:bg-slate-800/50 rounded-lg border border-slate-700/30 hover:border-slate-600/50 transition-all duration-200"
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-        >
-          {/* Cover Image */}
-          <div className="relative w-16 h-20 flex-shrink-0 bg-slate-700 rounded overflow-hidden">
+  const handleStatusClick = (e: React.MouseEvent, status: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addToFavorites(manga, status as 'plan-to-read' | 'reading' | 'completed' | 'dropped');
+  };
+
+  const renderListView = () => (
+    <div className="group">
+      <Link href={`/manga/${manga.id}`} className="block">
+        <div className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 bg-slate-800/30 hover:bg-slate-800/50 rounded-lg transition-colors duration-200">
+          {/* Mobile Optimized Cover Image */}
+          <div className="relative w-12 h-16 sm:w-16 sm:h-20 flex-shrink-0 bg-slate-700 rounded overflow-hidden">
             {coverUrl && !imageError ? (
               <Image
                 src={coverUrl}
@@ -92,144 +125,166 @@ export function MangaCardCompact({ manga, variant = 'grid' }: MangaCardCompactPr
                 blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
               />
             ) : (
-              <ImagePlaceholder 
-                showError={imageError}
-                size="sm"
-                className="w-full h-full rounded-none"
-              />
+              <ImagePlaceholder />
             )}
           </div>
 
-          {/* Content */}
+          {/* Mobile Optimized Info */}
           <div className="flex-1 min-w-0">
-            <h3 className="text-white font-medium text-sm truncate mb-1">
+            <h3 className="font-medium text-white text-sm sm:text-base line-clamp-1 group-hover:text-purple-300 transition-colors">
               {title}
             </h3>
-            <p className="text-slate-400 text-xs mb-2">
-              Por {authorName}
-            </p>
-            <div className="flex items-center space-x-2">
-              {mainTags.map((tag, index) => (
-                <span
-                  key={index}
-                  className="px-2 py-1 bg-purple-500/10 text-purple-300 text-xs rounded"
-                >
-                  {tag}
+            
+            {/* Mobile Optimized Meta Info */}
+            <div className="flex items-center space-x-1 sm:space-x-2 mt-1 text-xs text-slate-400">
+              {/* Rating */}
+              {rating && (
+                <div className="flex items-center space-x-1">
+                  <FiStar className="w-3 h-3 text-yellow-400 fill-current" />
+                  <span>{rating.toFixed(1)}</span>
+                </div>
+              )}
+              
+              {/* Status */}
+              {status && (
+                <span className={`px-1 sm:px-2 py-0.5 rounded-full text-xs ${getStatusColor(status)}`}>
+                  {getStatusText(status)}
                 </span>
-              ))}
+              )}
             </div>
+
+            {/* Tags - Hidden on very small screens */}
+            {tags.length > 0 && (
+              <div className="hidden sm:flex flex-wrap gap-1 mt-1">
+                {tags.slice(0, 2).map((tag, index) => (
+                  <span
+                    key={index}
+                    className="px-1.5 py-0.5 bg-purple-600/20 text-purple-300 rounded text-xs"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Actions */}
-          <div className={`flex items-center space-x-2 transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+          {/* Mobile Optimized Actions */}
+          <div className="flex flex-col space-y-1 sm:space-y-2">
             <button
-              onClick={handleAddToFavorites}
-              className="p-2 rounded-full bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 transition-colors"
-              title="Agregar a favoritos"
+              onClick={(e) => handleFavoriteClick(e)}
+              className={`p-1.5 sm:p-2 rounded-full transition-colors ${
+                isFavorite
+                  ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                  : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-white'
+              }`}
             >
-              <FiHeart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
+              <FiHeart className={`w-3 h-3 sm:w-4 sm:h-4 ${isFavorite ? 'fill-current' : ''}`} />
+            </button>
+
+            <button
+              onClick={(e) => handleStatusClick(e, 'reading')}
+              className="p-1.5 sm:p-2 bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 rounded-full transition-colors"
+              title="Marcar como leyendo"
+            >
+              <FiEye className="w-3 h-3 sm:w-4 sm:h-4" />
             </button>
           </div>
         </div>
       </Link>
-    );
-  }
+    </div>
+  );
 
-  // Grid variant (default)
-  return (
-    <Link href={`/manga/${manga.id}`}>
-      <div 
-        className="group relative bg-slate-800/30 hover:bg-slate-800/50 rounded-lg border border-slate-700/30 hover:border-slate-600/50 overflow-hidden transition-all duration-300 hover:scale-[1.02]"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-                  {/* Cover Image */}
-          <div className="relative aspect-[3/4.5] bg-slate-700">
+  const renderGridView = () => (
+    <div className="group h-full">
+      <Link href={`/manga/${manga.id}`} className="block h-full">
+        <div className="bg-slate-800/30 hover:bg-slate-800/50 rounded-lg p-2 sm:p-3 transition-all duration-200 hover:scale-105 h-full flex flex-col">
+          {/* Mobile Optimized Cover Image */}
+          <div className="relative aspect-[3/4.5] bg-slate-700 mb-2 sm:mb-3 rounded overflow-hidden">
             {coverUrl && !imageError ? (
               <Image
                 src={coverUrl}
                 alt={title}
                 fill
-                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                className="object-cover"
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 onError={() => setImageError(true)}
                 placeholder="blur"
                 blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
               />
-                          ) : (
-                <ImagePlaceholder 
-                  showError={imageError}
-                  title={title}
-                  size="lg"
-                  className="w-full h-full rounded-none"
-                />
-              )}
-          
-          {/* Quick Actions Overlay */}
-          <div className={`absolute inset-0 bg-black/60 flex items-center justify-center transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
-            <div className="flex space-x-2">
+            ) : (
+              <ImagePlaceholder />
+            )}
+
+            {/* Mobile Optimized Overlay Actions */}
+            <div className="absolute top-1 sm:top-2 right-1 sm:right-2 flex flex-col space-y-1">
               <button
-                onClick={handleAddToFavorites}
-                className="p-2 bg-purple-500 hover:bg-purple-600 text-white rounded-full transition-colors"
-                title="Agregar a favoritos"
+                onClick={(e) => handleFavoriteClick(e)}
+                className={`p-1 sm:p-1.5 rounded-full backdrop-blur-sm transition-colors ${
+                  isFavorite
+                    ? 'bg-red-500/80 text-white'
+                    : 'bg-black/50 text-white hover:bg-black/70'
+                }`}
               >
-                <FiHeart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
-              </button>
-              <button className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-colors">
-                <FiEye className="w-4 h-4" />
+                <FiHeart className={`w-3 h-3 sm:w-4 sm:h-4 ${isFavorite ? 'fill-current' : ''}`} />
               </button>
             </div>
+
+            {/* Rating Badge */}
+            {rating && (
+              <div className="absolute bottom-1 sm:bottom-2 left-1 sm:left-2 flex items-center space-x-1 bg-black/70 backdrop-blur-sm px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
+                <FiStar className="w-3 h-3 text-yellow-400 fill-current" />
+                <span className="text-white text-xs font-medium">{rating.toFixed(1)}</span>
+              </div>
+            )}
           </div>
 
-          {/* Status Badge */}
-          <div className="absolute top-2 right-2">
-            <span className={`px-2 py-1 text-xs rounded-full ${
-              manga.attributes.status === 'completed' 
-                ? 'bg-green-500/20 text-green-300 border border-green-500/30' 
-                : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-            }`}>
-              {manga.attributes.status === 'completed' ? 'Completado' : 'En curso'}
-            </span>
+          {/* Mobile Optimized Content */}
+          <div className="flex-1 flex flex-col">
+            <h3 className="font-medium text-white text-xs sm:text-sm line-clamp-2 group-hover:text-purple-300 transition-colors mb-1 sm:mb-2">
+              {title}
+            </h3>
+
+            {/* Mobile Optimized Meta */}
+            <div className="flex items-center justify-between text-xs text-slate-400 mb-1 sm:mb-2">
+              {/* Status */}
+              {status && (
+                <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-xs ${getStatusColor(status)}`}>
+                  {getStatusText(status)}
+                </span>
+              )}
+
+              {/* Last Update */}
+              {lastUpdate && (
+                <div className="flex items-center space-x-1">
+                  <FiClock className="w-3 h-3" />
+                  <span>{formatLastUpdate(lastUpdate)}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Optimized Tags */}
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-auto">
+                {tags.slice(0, variant === 'grid' ? 2 : 3).map((tag, index) => (
+                  <span
+                    key={index}
+                    className="px-1.5 py-0.5 bg-purple-600/20 text-purple-300 rounded text-xs"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Content */}
-        <div className="p-4">
-          {/* Title */}
-          <h3 className="text-white font-medium text-sm mb-2 line-clamp-2 group-hover:text-purple-400 transition-colors">
-            {title}
-          </h3>
-
-          {/* Author */}
-          <p className="text-slate-400 text-xs mb-3">
-            {authorName}
-          </p>
-
-          {/* Tags */}
-          <div className="flex flex-wrap gap-1 mb-3">
-            {mainTags.map((tag, index) => (
-              <span
-                key={index}
-                className="px-2 py-1 bg-purple-500/10 text-purple-300 text-xs rounded"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-
-          {/* Meta Info */}
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <div className="flex items-center space-x-1">
-              <FiStar className="w-3 h-3 text-yellow-400" />
-              <span>{manga.attributes.year || 'N/A'}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <FiClock className="w-3 h-3" />
-              <span>Actualizado</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Link>
+      </Link>
+    </div>
   );
+
+  if (variant === 'list') {
+    return renderListView();
+  }
+
+  // Grid variant (default)
+  return renderGridView();
 } 

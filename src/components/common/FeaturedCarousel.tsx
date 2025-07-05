@@ -197,19 +197,19 @@ const FeaturedCarousel: React.FC<FeaturedCarouselProps> = ({
 
   return (
     <div className={`relative bg-slate-900 ${className}`}>
-      {/* Compact Header */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white">
+      {/* Mobile Optimized Header */}
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
+        <div className="flex flex-col lg:flex-row items-center lg:items-start lg:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="w-full lg:w-auto text-center lg:text-left">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">
               Descubre Mangas
             </h1>
-            <p className="text-slate-400 text-sm">
+            <p className="text-slate-400 text-xs sm:text-sm mt-1">
               Explora miles de títulos en múltiples idiomas
             </p>
           </div>
           
-          {/* Search Bar with Real-time Search */}
+          {/* Mobile Optimized Search Bar */}
           <div className="w-full lg:w-auto lg:min-w-[300px]">
             <SearchBar
               onSearch={onSearch}
@@ -220,8 +220,8 @@ const FeaturedCarousel: React.FC<FeaturedCarouselProps> = ({
         </div>
       </div>
 
-      {/* Compact Carousel */}
-      <div className="container mx-auto px-4">
+      {/* Mobile Optimized Carousel */}
+      <div className="container mx-auto px-3 sm:px-4">
         <div 
           ref={carouselRef}
           className="relative bg-slate-800 rounded-lg overflow-hidden select-none"
@@ -254,11 +254,11 @@ const FeaturedCarousel: React.FC<FeaturedCarouselProps> = ({
             <div className="absolute inset-0 bg-slate-800/80"></div>
           </div>
 
-          {/* Content */}
-          <div className="relative z-10 p-6">
-            <div className="flex items-center gap-6 max-w-5xl mx-auto">
-              {/* Cover Image */}
-              <div className="relative w-24 h-32 md:w-32 md:h-44 flex-shrink-0 bg-slate-700 rounded-lg overflow-hidden shadow-lg">
+          {/* Mobile Optimized Content */}
+          <div className="relative z-10 p-3 sm:p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 md:gap-6 max-w-5xl mx-auto">
+              {/* Mobile Optimized Cover Image */}
+              <div className="relative w-20 h-28 sm:w-24 sm:h-32 md:w-32 md:h-44 flex-shrink-0 bg-slate-700 rounded-lg overflow-hidden shadow-lg mx-auto sm:mx-0">
                 {coverUrls[currentManga.id] && !imageErrors[currentManga.id] ? (
                   <Image
                     src={coverUrls[currentManga.id]}
@@ -271,18 +271,18 @@ const FeaturedCarousel: React.FC<FeaturedCarouselProps> = ({
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <FiBook className="w-6 h-6 text-slate-500" />
+                    <FiBook className="w-5 h-5 sm:w-6 sm:h-6 text-slate-500" />
                   </div>
                 )}
               </div>
 
-              {/* Info */}
-              <div className="flex-1 space-y-3">
+              {/* Mobile Optimized Info */}
+              <div className="flex-1 space-y-2 sm:space-y-3 text-center sm:text-left">
                 <div className="space-y-1">
-                  <h2 className="text-lg md:text-xl font-bold text-white leading-tight">
+                  <h2 className="text-base sm:text-lg md:text-xl font-bold text-white leading-tight">
                     {title}
                   </h2>
-                  <div className="flex items-center gap-2 text-xs text-slate-300">
+                  <div className="flex items-center justify-center sm:justify-start gap-2 text-xs text-slate-300">
                     <div className="flex items-center gap-1">
                       <FiCalendar className="w-3 h-3" />
                       <span>{publicationYear}</span>
@@ -293,9 +293,9 @@ const FeaturedCarousel: React.FC<FeaturedCarouselProps> = ({
                   </div>
                 </div>
 
-                {/* Genres */}
+                {/* Mobile Optimized Genres */}
                 {genres.length > 0 && (
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 justify-center sm:justify-start flex-wrap">
                     {genres.map((genre, index) => (
                       <span
                         key={index}
@@ -307,49 +307,49 @@ const FeaturedCarousel: React.FC<FeaturedCarouselProps> = ({
                   </div>
                 )}
 
-                {/* Description */}
-                <p className="text-slate-300 text-sm leading-relaxed">
+                {/* Mobile Optimized Description */}
+                <p className="text-slate-300 text-xs sm:text-sm leading-relaxed line-clamp-3 sm:line-clamp-2 md:line-clamp-none">
                   {truncatedDescription}
                 </p>
 
-                {/* Action Button */}
+                {/* Mobile Optimized Action Button */}
                 <button
                   onClick={() => onMangaClick(currentManga.id)}
-                  className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+                  className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors text-xs sm:text-sm font-medium w-full sm:w-auto justify-center"
                 >
-                  <FiBook className="w-4 h-4" />
+                  <FiBook className="w-3 h-3 sm:w-4 sm:h-4" />
                   <span>Ver Detalles</span>
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Navigation Arrows */}
+          {/* Mobile Optimized Navigation Arrows */}
           {mangas.length > 1 && (
             <>
               <button
                 onClick={goToPrevious}
-                className="absolute left-2 top-1/2 transform -translate-y-1/2 p-2 bg-black/40 hover:bg-black/60 text-white rounded-full transition-colors z-30"
+                className="absolute left-1 sm:left-2 top-1/2 transform -translate-y-1/2 p-1.5 sm:p-2 bg-black/40 hover:bg-black/60 text-white rounded-full transition-colors z-30"
               >
-                <FiChevronLeft className="w-4 h-4" />
+                <FiChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" />
               </button>
               <button
                 onClick={goToNext}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 bg-black/40 hover:bg-black/60 text-white rounded-full transition-colors z-30"
+                className="absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 p-1.5 sm:p-2 bg-black/40 hover:bg-black/60 text-white rounded-full transition-colors z-30"
               >
-                <FiChevronRight className="w-4 h-4" />
+                <FiChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
               </button>
             </>
           )}
 
-          {/* Indicators */}
+          {/* Mobile Optimized Indicators */}
           {mangas.length > 1 && (
-            <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex gap-1 z-30">
+            <div className="absolute bottom-2 sm:bottom-3 left-1/2 transform -translate-x-1/2 flex gap-1 z-30">
               {mangas.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => goToSlide(index)}
-                  className={`w-2 h-2 rounded-full transition-all ${
+                  className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all ${
                     index === currentIndex 
                       ? 'bg-white' 
                       : 'bg-white/50 hover:bg-white/70'
@@ -359,8 +359,8 @@ const FeaturedCarousel: React.FC<FeaturedCarouselProps> = ({
             </div>
           )}
 
-          {/* Drag Hint */}
-          <div className="absolute bottom-12 right-4 text-slate-400 text-xs opacity-60 z-30 hidden md:block">
+          {/* Hide drag hint on mobile */}
+          <div className="absolute bottom-8 sm:bottom-12 right-4 text-slate-400 text-xs opacity-60 z-30 hidden lg:block">
             Arrastra o usa las flechas para navegar
           </div>
         </div>
